@@ -1,3 +1,206 @@
 {% extends "base.html" %}
+
 {% block title %}Inventory | CorePoint POS{% endblock %}
-{% block content %}<div class="row g-4"><div class="col-lg-4"><div class="app-card card"><div class="card-body"><h1 class="h4">{% if edit_id %}Edit{% else %}Add{% endif %} Product</h1><form method="post">{% csrf_token %}{% if edit_id %}<input type="hidden" name="id" value="{{ edit_id }}">{% endif %}{% for field in form %}<div class="mb-3">{% if field.field.widget.input_type == 'checkbox' %}<div class="form-check">{{ field }}<label class="form-check-label">{{ field.label }}</label></div>{% else %}<label class="form-label">{{ field.label }}</label>{{ field }}{% endif %}<div class="small text-danger">{{ field.errors }}</div></div>{% endfor %}<button class="btn btn-primary">Save Product</button></form></div></div></div><div class="col-lg-8"><div class="app-card card"><div class="card-body"><div class="d-flex justify-content-between"><div><h1 class="h4 mb-0">Inventory</h1>{% if query %}<small class="text-muted">Search results for “{{ query }}”</small>{% endif %}</div><a class="btn btn-sm btn-success" href="{% url 'inventory:restock' %}"><i class="fa-solid fa-plus me-1"></i>Restock by SKU</a></div><div class="table-responsive"><table class="table table-hover"><thead><tr><th>Product</th><th>Type</th><th>Stock</th><th></th></tr></thead><tbody>{% for product in products %}<tr><td><strong>{{ product.name }}</strong><br><small><i class="fa-solid fa-barcode me-1"></i>{{ product.sku }}</small></td><td>{% if product.is_service %}Service{% else %}Product{% endif %}</td><td>{% if product.is_service %}—{% else %}{{ product.stock_quantity }}{% endif %}</td><td class="text-end">{% if not product.is_service %}<a class="btn btn-sm btn-outline-success" href="{% url 'inventory:product_restock' product.pk %}"><i class="fa-solid fa-boxes-stacked me-1"></i>Restock</a>{% endif %}<form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="id" value="{{ product.pk }}"><button class="btn btn-sm btn-outline-primary">Edit</button></form><form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="id" value="{{ product.pk }}"><input type="hidden" name="delete" value="1"><button class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-trash"></i></button></form></td></tr>{% empty %}<tr><td colspan="4" class="text-center text-muted py-4">No products match this search.</td></tr>{% endfor %}</tbody></table></div></div></div></div></div>{% endblock %}
+
+{% block content %}
+<style>
+    .spa-card {
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+    .sku-badge {
+        font-family: monospace;
+        font-size: 0.75rem;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 3px 6px;
+        border-radius: 4px;
+        color: #495057;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="h3 fw-bold mb-1 text-dark">Inventory Management</h2>
+            <p class="text-muted small mb-0">Manage your product catalog, services, and stock levels.</p>
+        </div>
+        <a class="btn btn-success fw-semibold shadow-sm px-4 py-2" href="{% url 'inventory:restock' %}">
+            <i class="fa-solid fa-plus me-2"></i>Restock by SKU
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: Add / Edit Product Form -->
+        <section class="col-lg-4 col-xl-4">
+            <div class="spa-card card p-3 p-md-4 sticky-top" style="top: 20px; z-index: 10;">
+                <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid {% if edit_id %}fa-pen-to-square text-warning{% else %}fa-box text-success{% endif %} me-2"></i>
+                        {% if edit_id %}Edit Product{% else %}Add Product{% endif %}
+                    </h5>
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if edit_id %}
+                        <input type="hidden" name="id" value="{{ edit_id }}">
+                    {% endif %}
+
+                    {% for field in form %}
+                        <div class="mb-3">
+                            {% if field.field.widget.input_type == 'checkbox' %}
+                                <!-- Render Checkboxes as Modern Switches -->
+                                <div class="form-check form-switch mt-2">
+                                    {{ field }}
+                                    <label class="form-check-label fw-semibold small text-secondary ms-1" for="{{ field.id_for_label }}">
+                                        {{ field.label }}
+                                    </label>
+                                </div>
+                            {% else %}
+                                <label class="form-label fw-semibold small text-secondary" for="{{ field.id_for_label }}">
+                                    {{ field.label }}
+                                </label>
+                                {{ field }}
+                            {% endif %}
+                            
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">
+                                    <i class="fa-solid fa-circle-exclamation me-1"></i>{{ field.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2 pt-3 border-top mt-3">
+                        <button type="submit" class="btn btn-success text-white py-2 fw-semibold shadow-sm">
+                            <i class="fa-solid fa-floppy-disk me-1"></i>
+                            {% if edit_id %}Update Product{% else %}Save Product{% endif %}
+                        </button>
+                        {% if edit_id %}
+                            <a class="btn btn-light text-muted border py-2" href="{% url 'inventory:products' %}">
+                                Cancel
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Right: Product List Table -->
+        <section class="col-lg-8 col-xl-8">
+            <div class="spa-card card p-3 p-md-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-boxes-stacked me-2 text-primary"></i>All Products
+                    </h5>
+                    {% if query %}
+                        <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">
+                            Search: "{{ query }}"
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light rounded">
+                            <tr class="text-secondary small text-uppercase fw-bold">
+                                <th class="border-0 ps-3">Product Info</th>
+                                <th class="border-0 text-center">Type</th>
+                                <th class="border-0 text-center">Stock</th>
+                                <th class="border-0 text-end pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in products %}
+                                <tr>
+                                    <!-- Product Info -->
+                                    <td class="ps-3">
+                                        <div class="fw-bold text-dark">{{ product.name }}</div>
+                                        <div class="text-muted mt-1">
+                                            <i class="fa-solid fa-barcode me-1 small"></i>
+                                            <span class="sku-badge">{{ product.sku }}</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Type (Colored Pills) -->
+                                    <td class="text-center">
+                                        {% if product.is_service %}
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle px-3 py-1 rounded-pill">Service</span>
+                                        {% else %}
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-1 rounded-pill">Product</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Stock -->
+                                    <td class="text-center">
+                                        {% if product.is_service %}
+                                            <span class="text-muted">—</span>
+                                        {% else %}
+                                            <span class="fw-bold fs-6 text-dark">{{ product.stock_quantity }}</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Actions -->
+                                    <td class="text-end pe-3">
+                                        <div class="d-inline-flex gap-1 align-items-center">
+                                            {% if not product.is_service %}
+                                                <a class="btn btn-sm btn-outline-success px-3 py-1 me-2 fw-semibold" href="{% url 'inventory:product_restock' product.pk %}" title="Restock">
+                                                    <i class="fa-solid fa-boxes-stacked me-1"></i>Restock
+                                                </a>
+                                            {% endif %}
+                                            
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="id" value="{{ product.pk }}">
+                                                <button type="submit" class="btn btn-outline-primary btn-action" title="Edit Product">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="id" value="{{ product.pk }}">
+                                                <input type="hidden" name="delete" value="1">
+                                                <button type="submit" class="btn btn-outline-danger btn-action" title="Delete Product" onclick="return confirm('Are you sure you want to delete this item?')">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-5">
+                                        <i class="fa-solid fa-magnifying-glass fa-2x mb-3 text-secondary d-block"></i>
+                                        <h6 class="fw-bold">No products found</h6>
+                                        <p class="small mb-0">
+                                            {% if query %}
+                                                No results match your search for "{{ query }}".
+                                            {% else %}
+                                                Your inventory is currently empty.
+                                            {% endif %}
+                                        </p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

@@ -3,32 +3,193 @@
 {% block title %}Categories | CorePoint POS{% endblock %}
 
 {% block content %}
-<div class="row g-4">
-    <section class="col-lg-5">
-        <div class="app-card card"><div class="card-body">
-            <h1 class="h4">{% if edit_id %}Edit{% else %}Add{% endif %} Category</h1>
-            <form method="post" novalidate>
-                {% csrf_token %}
-                {% if edit_id %}<input type="hidden" name="id" value="{{ edit_id }}">{% endif %}
-                {% for field in form %}
-                    <div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}<div class="small text-danger">{{ field.errors }}</div></div>
-                {% endfor %}
-                <button class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Save Category</button>
-                {% if edit_id %}<a class="btn btn-light" href="{% url 'inventory:categories' %}">Cancel</a>{% endif %}
-            </form>
-        </div></div>
-    </section>
-    <section class="col-lg-7">
-        <div class="app-card card"><div class="card-body">
-            <h1 class="h4">Product Categories</h1>
-            <div class="table-responsive"><table class="table table-hover align-middle">
-                <thead><tr><th>Name</th><th>Products</th><th>Image</th><th>Description</th><th></th></tr></thead>
-                <tbody>{% for category in categories %}<tr>
-                    <td class="fw-semibold">{{ category.name }}</td><td>{{ category.products.count }}</td><td>{% if category.image_url %}<img src="{{ category.image_url }}" alt="" width="42" height="30" class="rounded object-fit-cover">{% else %}<span class="text-muted small">Default</span>{% endif %}</td><td class="text-muted">{{ category.description|default:"—" }}</td>
-                    <td class="text-end"><form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="id" value="{{ category.pk }}"><button class="btn btn-sm btn-outline-primary">Edit</button></form><form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="id" value="{{ category.pk }}"><input type="hidden" name="delete" value="1"><button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this category? Its products will become uncategorised.')"><i class="fa-solid fa-trash"></i></button></form></td>
-                </tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">No categories yet.</td></tr>{% endfor %}</tbody>
-            </table></div>
-        </div></div>
-    </section>
+<style>
+    .spa-card {
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .category-thumbnail {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        object-fit: cover;
+        background: #f1f4f0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .badge-count {
+        font-size: 0.8rem;
+        padding: 0.35em 0.7em;
+        border-radius: 20px;
+        background-color: #edf2eb;
+        color: #1f4717;
+        font-weight: 600;
+    }
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Breadcrumb & Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h2 class="h3 fw-bold mb-1">Category Management</h2>
+            <p class="text-muted small mb-0">Organize your inventory catalog and POS display layout.</p>
+        </div>
+        <span class="badge bg-white text-muted border px-3 py-2 rounded-pill shadow-sm">
+            <i class="fa-solid fa-layer-group me-1 text-success"></i> {{ categories|length }} Total Categories
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: Add / Edit Category Form -->
+        <section class="col-lg-4 col-xl-4">
+            <div class="spa-card card p-3 p-md-4 sticky-top" style="top: 20px; z-index: 10;">
+                <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid {% if edit_id %}fa-pen-to-square text-warning{% else %}fa-plus-circle text-success{% endif %} me-2"></i>
+                        {% if edit_id %}Edit Category{% else %}Create Category{% endif %}
+                    </h5>
+                    {% if edit_id %}
+                        <a href="{% url 'inventory:categories' %}" class="btn-close small" aria-label="Cancel edit"></a>
+                    {% endif %}
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% if edit_id %}
+                        <input type="hidden" name="id" value="{{ edit_id }}">
+                    {% endif %}
+
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold small text-secondary" for="{{ field.id_for_label }}">
+                                {{ field.label }}
+                            </label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">
+                                    <i class="fa-solid fa-circle-exclamation me-1"></i>{{ field.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2 pt-2">
+                        <button type="submit" class="btn btn-success text-white py-2 fw-semibold shadow-sm">
+                            <i class="fa-solid fa-floppy-disk me-1"></i>
+                            {% if edit_id %}Update Changes{% else %}Save Category{% endif %}
+                        </button>
+                        {% if edit_id %}
+                            <a class="btn btn-light text-muted border py-2" href="{% url 'inventory:categories' %}">
+                                Cancel
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Right: Category List Table -->
+        <section class="col-lg-8 col-xl-8">
+            <div class="spa-card card p-3 p-md-4">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="fa-solid fa-list-ul me-2 text-primary"></i>All Categories
+                    </h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light rounded">
+                            <tr class="text-secondary small text-uppercase fw-bold">
+                                <th class="border-0 ps-3" style="width: 70px;">Media</th>
+                                <th class="border-0">Category</th>
+                                <th class="border-0 text-center">Items</th>
+                                <th class="border-0">Description</th>
+                                <th class="border-0 text-end pe-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for category in categories %}
+                                <tr>
+                                    <!-- Image Thumbnail -->
+                                    <td class="ps-3">
+                                        {% if category.image_url %}
+                                            <img src="{{ category.image_url }}" alt="{{ category.name }}" class="category-thumbnail shadow-sm">
+                                        {% else %}
+                                            <div class="category-thumbnail text-muted">
+                                                <i class="fa-regular fa-image fa-lg"></i>
+                                            </div>
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Name -->
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ category.name }}</div>
+                                        <span class="text-muted small">ID: #{{ category.pk }}</span>
+                                    </td>
+
+                                    <!-- Count -->
+                                    <td class="text-center">
+                                        <span class="badge-count border">
+                                            {{ category.products.count }} {{ category.products.count|pluralize:"item,items" }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Description -->
+                                    <td class="text-muted small" style="max-width: 220px;">
+                                        <span class="text-truncate d-inline-block w-100">
+                                            {{ category.description|default:"—" }}
+                                        </span>
+                                    </td>
+
+                                    <!-- Actions -->
+                                    <td class="text-end pe-3">
+                                        <div class="d-inline-flex gap-1">
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="id" value="{{ category.pk }}">
+                                                <button type="submit" class="btn btn-outline-primary btn-action" title="Edit Category">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" class="d-inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="id" value="{{ category.pk }}">
+                                                <input type="hidden" name="delete" value="1">
+                                                <button type="submit" class="btn btn-outline-danger btn-action" title="Delete Category" onclick="return confirm('Delete this category? Its products will become uncategorised.')">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-5">
+                                        <i class="fa-solid fa-box-open fa-2x mb-3 text-secondary d-block"></i>
+                                        <h6 class="fw-bold">No categories registered yet</h6>
+                                        <p class="small mb-0">Use the form on the left to add your first product category.</p>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}

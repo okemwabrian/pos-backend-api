@@ -3,51 +3,188 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Receipt #{{ invoice.pk }}</title>
+    <title>Receipt #{{ invoice.pk }} | {{ shop_name }}</title>
+    
+    <!-- UI Fonts & Icons for the Screen View -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        @page { size: 80mm auto; margin: 4mm; }
-        * { box-sizing: border-box; }
-        body { width: 72mm; margin: 0 auto; color: #000; font: 12px/1.4 monospace; }
+        /* ---------------------------------------------------------
+           1. Screen UI Styles (The SPA Look)
+           --------------------------------------------------------- */
+        body {
+            background-color: #edf2eb; /* Matches your SPA background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .receipt-card {
+            background: #ffffff;
+            width: 340px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        /* ---------------------------------------------------------
+           2. Authentic Receipt Styles (Monospace)
+           --------------------------------------------------------- */
+        .receipt-content {
+            font-family: 'Courier New', Courier, monospace; /* Best for thermal printers */
+            font-size: 13px;
+            line-height: 1.4;
+            color: #000000;
+        }
+
         .center { text-align: center; }
-        .line { border-top: 1px dashed #000; margin: 9px 0; }
-        table { width: 100%; border-collapse: collapse; }
-        th { text-align: left; }
+        .line { border-top: 1.5px dashed #000; margin: 12px 0; }
+        
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th { text-align: left; font-weight: bold; padding-bottom: 6px; border-bottom: 1.5px dashed #000; }
         th:last-child, td:last-child { text-align: right; }
-        .total { font-size: 14px; font-weight: bold; }
-        button, .back-link { margin: 1rem 0 .25rem; width: 100%; padding: .5rem; display: block; text-align: center; }
-        .back-link { color: #000; }
-        @media print { button, .back-link { display: none; } }
+        td { padding: 6px 0; vertical-align: top; }
+        
+        .item-name { font-weight: bold; display: block; margin-bottom: 2px; }
+        .item-meta { font-size: 11px; color: #333; }
+        
+        .total-wrapper { margin-top: 15px; }
+        .total-row { font-size: 16px; font-weight: bold; }
+
+        /* ---------------------------------------------------------
+           3. Screen Action Buttons
+           --------------------------------------------------------- */
+        .actions {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .btn {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn:hover { transform: translateY(-2px); }
+        .btn-print { background: #1f4717; color: white; box-shadow: 0 4px 12px rgba(31,71,23,0.2); }
+        .btn-back { background: #f8f9fa; color: #495057; border: 1px solid #dee2e6; }
+
+        /* ---------------------------------------------------------
+           4. Print-Specific Override (Triggered on window.print)
+           --------------------------------------------------------- */
+        @media print {
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+                background: transparent; 
+                padding: 0; 
+                display: block; 
+            }
+            .receipt-card { 
+                width: 76mm; /* Standard thermal printable area */
+                padding: 2mm; 
+                margin: 0 auto; 
+                box-shadow: none; 
+                border-radius: 0; 
+            }
+            .actions { display: none; } /* Hide buttons on print */
+            .receipt-content { font-size: 12px; color: #000; }
+            .line { border-top: 1px dashed #000; }
+        }
     </style>
 </head>
 <body>
-    <div class="center">
-        <strong>{{ shop_name|upper }}</strong><br>
-        POS RECEIPT<br>
-        Invoice #{{ invoice.pk }}<br>
-        {{ invoice.created_at|date:"d M Y, H:i" }}
-    </div>
-    <div class="line"></div>
-    <div>Cashier: {{ invoice.cashier.get_full_name|default:invoice.cashier.username }}</div>
-    <div>Payment: {{ invoice.get_payment_method_display }}</div>
-    {% if invoice.customer %}<div>Customer: {{ invoice.customer.name }}</div>{% endif %}
-    <div class="line"></div>
-    <table>
-        <thead><tr><th>Item</th><th>Amount</th></tr></thead>
-        <tbody>
-            {% for item in receipt_items %}
-                <tr>
-                    <td>{{ item.product.name }}<br>{{ item.quantity }} × {{ item.price_at_sale|floatformat:2 }}</td>
-                    <td>KSh {{ item.line_total|floatformat:2 }}</td>
+
+    <div class="receipt-card">
+        <!-- Thermal Receipt Content -->
+        <div class="receipt-content">
+            <div class="center">
+                <h2 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold;">{{ shop_name|upper }}</h2>
+                <div style="font-size: 12px;">POS RECEIPT</div>
+                <div style="margin-top: 10px;">Invoice #{{ invoice.pk }}</div>
+                <div>{{ invoice.created_at|date:"d M Y, H:i" }}</div>
+            </div>
+            
+            <div class="line"></div>
+            
+            <div><strong>Cashier:</strong> {{ invoice.cashier.get_full_name|default:invoice.cashier.username }}</div>
+            <div><strong>Payment:</strong> {{ invoice.get_payment_method_display }}</div>
+            {% if invoice.customer %}
+                <div><strong>Customer:</strong> {{ invoice.customer.name }}</div>
+            {% endif %}
+            
+            <div class="line"></div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item Description</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in receipt_items %}
+                        <tr>
+                            <td>
+                                <span class="item-name">{{ item.product.name }}</span>
+                                <span class="item-meta">{{ item.quantity }} × KSh {{ item.price_at_sale|floatformat:2 }}</span>
+                            </td>
+                            <td>KSh {{ item.line_total|floatformat:2 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="line"></div>
+            
+            <table class="total-wrapper">
+                <tr class="total-row">
+                    <td>TOTAL</td>
+                    <td>KSh {{ invoice.total_amount|floatformat:2 }}</td>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <div class="line"></div>
-    <table class="total"><tr><td>TOTAL</td><td>KSh {{ invoice.total_amount|floatformat:2 }}</td></tr></table>
-    <div class="line"></div>
-    <p class="center">Thank you for your business.</p>
-    <button type="button" onclick="window.print()">Print receipt</button>
-    <a class="back-link" href="{% url 'sales:pos_terminal' %}">Back to POS</a>
-    <script>window.onload = function() { window.print(); }</script>
+            </table>
+            
+            <div class="line"></div>
+            
+            <div class="center" style="margin-top: 15px;">
+                Thank you for your business!
+            </div>
+        </div>
+
+        <!-- Web UI Buttons (Hidden during printing) -->
+        <div class="actions no-print">
+            <button type="button" class="btn btn-print" onclick="window.print()">
+                <i class="fa-solid fa-print me-2"></i>Print Receipt
+            </button>
+            <a class="btn btn-back" href="{% url 'sales:pos_terminal' %}">
+                <i class="fa-solid fa-arrow-left me-2"></i>Back to POS
+            </a>
+        </div>
+    </div>
+
+    <!-- Auto-trigger print dialog when the page loads -->
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 500); // Slight delay ensures styles map correctly before print
+        }
+    </script>
 </body>
 </html>

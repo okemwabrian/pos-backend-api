@@ -3,17 +3,184 @@
 {% block title %}Receive Stock | CorePoint POS{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><div><h1 class="h2 mb-1"><i class="fa-solid fa-truck-ramp-box me-2 text-primary"></i>Receive Stock</h1><p class="text-muted mb-0">Confirm pending purchase orders to add their quantities to inventory.</p></div><div class="d-flex gap-2"><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quickRestockModal"><i class="fa-solid fa-bolt me-1"></i>Restock by Product</button><a href="{% url 'inventory:restock' %}" class="btn btn-success"><i class="fa-solid fa-barcode me-1"></i>Accept Stock by SKU</a></div></div>
-<div class="app-card card"><div class="card-body p-0">
-    <div class="table-responsive"><table class="table table-hover align-middle mb-0">
-        <thead class="table-light"><tr><th class="ps-4">Purchase order</th><th>Supplier</th><th>Ordered items</th><th>Created</th><th class="text-end pe-4">Action</th></tr></thead>
-        <tbody>{% for order in purchase_orders %}<tr>
-            <td class="ps-4 fw-semibold"><i class="fa-solid fa-file-invoice me-1 text-primary"></i>PO #{{ order.pk }}</td><td>{{ order.supplier|default:"No supplier" }}</td>
-            <td><ul class="list-unstyled mb-0 small">{% for item in order.items.all %}<li><i class="fa-solid fa-box me-1 text-secondary"></i>{{ item.product.name }} <span class="badge text-bg-light border">+{{ item.quantity }}</span></li>{% endfor %}</ul></td>
-            <td class="text-muted">{{ order.order_date|date:"d M Y, H:i" }}</td>
-            <td class="text-end pe-4"><form method="post">{% csrf_token %}<input type="hidden" name="purchase_order_id" value="{{ order.pk }}"><button class="btn btn-success btn-sm" type="submit"><i class="fa-solid fa-check me-1"></i>Receive</button></form></td>
-        </tr>{% empty %}<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-clipboard-check d-block fs-2 mb-2"></i>All purchase orders have been received.</td></tr>{% endfor %}</tbody>
-    </table></div>
-</div></div>
-<div class="modal fade" id="quickRestockModal" tabindex="-1" aria-labelledby="quickRestockLabel" aria-hidden="true"><div class="modal-dialog"><div class="modal-content"><form method="post">{% csrf_token %}<input type="hidden" name="action" value="quick_restock"><div class="modal-header"><h2 class="modal-title fs-5" id="quickRestockLabel"><i class="fa-solid fa-bolt me-2 text-primary"></i>Quick Restock</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p class="text-muted small">This immediately increases stock and does not create a purchase order.</p><div class="mb-3"><label class="form-label" for="quick-product">Product</label><select class="form-select" name="product_id" id="quick-product" required><option value="">Choose a product</option>{% for product in products %}<option value="{{ product.pk }}">{{ product.name }} — {{ product.sku }} ({{ product.stock_quantity }} in stock)</option>{% endfor %}</select></div><div><label class="form-label" for="quick-quantity">Quantity to add</label><input class="form-control" type="number" name="quantity" id="quick-quantity" min="1" required></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Add to Stock</button></div></form></div></div></div>
+<style>
+    .spa-card {
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .action-btn {
+        border-radius: 8px;
+        transition: all 0.2s ease-in-out;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    /* Modal specific styling to match the SPA feel */
+    .spa-modal .modal-content {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    .spa-modal .modal-header {
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+        padding: 1.5rem 1.5rem 1rem;
+    }
+    .spa-modal .modal-body {
+        padding: 1.5rem;
+    }
+    .spa-modal .modal-footer {
+        border-top: 1px solid rgba(0,0,0,0.05);
+        padding: 1rem 1.5rem;
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Header & Action Buttons -->
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h2 class="h3 fw-bold mb-1 text-dark">
+                <i class="fa-solid fa-truck-ramp-box me-2 text-success"></i>Receive Stock
+            </h2>
+            <p class="text-muted small mb-0">
+                Confirm pending purchase orders to add their quantities to your inventory.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary text-white fw-semibold px-3 py-2 action-btn shadow-sm" data-bs-toggle="modal" data-bs-target="#quickRestockModal">
+                <i class="fa-solid fa-bolt me-2"></i>Quick Restock
+            </button>
+            <a href="{% url 'inventory:restock' %}" class="btn btn-success text-white fw-semibold px-3 py-2 action-btn shadow-sm">
+                <i class="fa-solid fa-barcode me-2"></i>Restock by SKU
+            </a>
+        </div>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="spa-card card p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light border-bottom">
+                    <tr class="text-secondary small text-uppercase fw-bold">
+                        <th class="border-0 ps-4 py-3">Purchase Order</th>
+                        <th class="border-0 py-3">Supplier</th>
+                        <th class="border-0 py-3">Ordered Items</th>
+                        <th class="border-0 py-3">Created</th>
+                        <th class="border-0 text-end pe-4 py-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for order in purchase_orders %}
+                        <tr>
+                            <!-- PO Identifier -->
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark d-flex align-items-center">
+                                    <div class="bg-primary bg-opacity-10 text-primary rounded p-2 me-3 d-inline-flex">
+                                        <i class="fa-solid fa-file-invoice"></i>
+                                    </div>
+                                    PO #{{ order.pk }}
+                                </div>
+                            </td>
+                            
+                            <!-- Supplier -->
+                            <td>
+                                <span class="fw-semibold text-dark">{{ order.supplier|default:"Walk-in / No supplier" }}</span>
+                            </td>
+                            
+                            <!-- Items List -->
+                            <td>
+                                <ul class="list-unstyled mb-0 small">
+                                    {% for item in order.items.all %}
+                                        <li class="mb-1 d-flex align-items-center">
+                                            <i class="fa-solid fa-box text-muted me-2" style="font-size: 0.8rem;"></i>
+                                            <span class="text-dark me-2">{{ item.product.name }}</span>
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle rounded-pill">
+                                                +{{ item.quantity }}
+                                            </span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            
+                            <!-- Date -->
+                            <td class="text-muted small">
+                                <i class="fa-regular fa-clock me-1"></i>{{ order.order_date|date:"d M Y, H:i" }}
+                            </td>
+                            
+                            <!-- Action -->
+                            <td class="text-end pe-4">
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="purchase_order_id" value="{{ order.pk }}">
+                                    <button class="btn btn-success text-white btn-sm px-3 py-1 action-btn fw-semibold" type="submit">
+                                        <i class="fa-solid fa-check me-1"></i>Receive
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="fa-solid fa-clipboard-check fa-3x mb-3 text-secondary d-block opacity-50"></i>
+                                <h6 class="fw-bold text-dark">You are all caught up!</h6>
+                                <p class="text-muted small mb-0">All purchase orders have been received and added to inventory.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Restock Modal -->
+<div class="modal fade spa-modal" id="quickRestockModal" tabindex="-1" aria-labelledby="quickRestockLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="quick_restock">
+                
+                <div class="modal-header d-flex align-items-center">
+                    <h5 class="modal-title fw-bold text-dark mb-0" id="quickRestockLabel">
+                        <i class="fa-solid fa-bolt me-2 text-primary"></i>Quick Restock
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="alert alert-primary bg-primary bg-opacity-10 border-primary-subtle text-primary d-flex align-items-start p-3 rounded-3 mb-4">
+                        <i class="fa-solid fa-circle-info mt-1 me-2"></i>
+                        <small class="fw-semibold">This immediately increases stock for a specific product without generating a formal purchase order.</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-secondary" for="quick-product">Select Product</label>
+                        <select class="form-select shadow-sm" name="product_id" id="quick-product" required>
+                            <option value="">Choose a product from inventory...</option>
+                            {% for product in products %}
+                                <option value="{{ product.pk }}">{{ product.name }} — {{ product.sku }} ({{ product.stock_quantity }} in stock)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold small text-secondary" for="quick-quantity">Quantity to Add</label>
+                        <input class="form-control shadow-sm" type="number" name="quantity" id="quick-quantity" min="1" placeholder="e.g. 50" required>
+                    </div>
+                </div>
+                
+                <div class="modal-footer d-flex gap-2">
+                    <button type="button" class="btn btn-light text-muted fw-semibold border px-4 py-2 action-btn m-0" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary text-white fw-semibold px-4 py-2 action-btn m-0">
+                        <i class="fa-solid fa-plus me-2"></i>Add to Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

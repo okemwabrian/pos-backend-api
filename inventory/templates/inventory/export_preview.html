@@ -1,6 +1,88 @@
 {% extends "base.html" %}
+
 {% block title %}Inventory Export Preview | {{ shop_name }}{% endblock %}
+
 {% block content %}
-<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><h1 class="h2 mb-1"><i class="fas fa-file-export me-2 text-primary"></i>Inventory Export Preview</h1><p class="text-muted mb-0">Review {{ total_rows }} inventory row{{ total_rows|pluralize }} before downloading.</p></div><div class="btn-group"><a class="btn btn-success" href="{% url 'inventory:export_download' 'xlsx' %}"><i class="fas fa-file-excel me-1"></i>Download Excel</a><a class="btn btn-outline-danger" href="{% url 'inventory:export_download' 'pdf' %}"><i class="fas fa-file-pdf me-1"></i>Download PDF</a></div></div>
-<div class="app-card card"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr>{% for header in headers %}<th class="px-3">{{ header }}</th>{% endfor %}</tr></thead><tbody>{% for row in rows %}<tr>{% for value in row %}<td class="px-3">{{ value }}</td>{% endfor %}</tr>{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">No inventory to export.</td></tr>{% endfor %}</tbody></table></div>{% if total_rows > rows|length %}<p class="small text-muted m-3 mb-0">Preview shows the first {{ rows|length }} rows. The download includes all {{ total_rows }} rows.</p>{% endif %}</div></div>
+<style>
+    .spa-card {
+        background: #ffffff;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .action-btn {
+        border-radius: 8px;
+        transition: all 0.2s ease-in-out;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+</style>
+
+<div class="container-fluid px-0">
+    <!-- Header & Action Buttons -->
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h2 class="h3 fw-bold mb-1 text-dark">
+                <i class="fa-solid fa-file-export me-2 text-success"></i>Export Preview
+            </h2>
+            <p class="text-muted small mb-0">
+                Reviewing {{ total_rows }} inventory row{{ total_rows|pluralize }} before generating the final report.
+            </p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <a class="btn btn-success text-white fw-semibold px-4 py-2 action-btn" href="{% url 'inventory:export_download' 'xlsx' %}">
+                <i class="fa-solid fa-file-excel me-2"></i>Export to Excel
+            </a>
+            <a class="btn btn-outline-danger fw-semibold px-4 py-2 action-btn" href="{% url 'inventory:export_download' 'pdf' %}">
+                <i class="fa-solid fa-file-pdf me-2"></i>Export to PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Data Table Card -->
+    <div class="spa-card card p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light border-bottom">
+                    <tr class="text-secondary small text-uppercase fw-bold">
+                        {% for header in headers %}
+                            <th class="px-4 py-3 border-0">{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for row in rows %}
+                        <tr>
+                            {% for value in row %}
+                                <td class="px-4 py-3 text-dark">{{ value }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="{{ headers|length|default:6 }}" class="text-center text-muted py-5">
+                                <i class="fa-solid fa-folder-open fa-2x mb-3 text-secondary d-block"></i>
+                                <h6 class="fw-bold">No inventory data available</h6>
+                                <p class="small mb-0">Your database is currently empty.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Preview Note Footer -->
+        {% if total_rows > rows|length %}
+            <div class="bg-light p-3 border-top text-center">
+                <span class="text-muted small">
+                    <i class="fa-solid fa-circle-info me-1 text-primary"></i>
+                    Displaying a preview of the first <strong>{{ rows|length }}</strong> rows. The final download will contain all <strong>{{ total_rows }}</strong> items.
+                </span>
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}
