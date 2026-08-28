@@ -1,10 +1,10 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import InvoiceViewSet
+from django.urls import path
 
-router = DefaultRouter()
-router.register(r'invoices', InvoiceViewSet)
+from .views import generate_receipt_pdf, pos_terminal_view
+
+app_name = 'sales'
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('pos/', pos_terminal_view, name='pos_terminal'),
+    path('invoices/<int:invoice_id>/receipt/', generate_receipt_pdf, name='receipt'),
 ]

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Receipt #{{ invoice.pk }}</title>
+    <style>
+        @page { size: 80mm auto; margin: 4mm; }
+        * { box-sizing: border-box; }
+        body { width: 72mm; margin: 0 auto; color: #000; font: 12px/1.4 monospace; }
+        .center { text-align: center; }
+        .line { border-top: 1px dashed #000; margin: 9px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; }
+        th:last-child, td:last-child { text-align: right; }
+        .total { font-size: 14px; font-weight: bold; }
+        button { margin: 1rem 0; width: 100%; padding: .5rem; }
+        @media print { button { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="center">
+        <strong>POS RECEIPT</strong><br>
+        Invoice #{{ invoice.pk }}<br>
+        {{ invoice.created_at|date:"d M Y, H:i" }}
+    </div>
+    <div class="line"></div>
+    <div>Cashier: {{ invoice.cashier.get_full_name|default:invoice.cashier.username }}</div>
+    <div>Payment: {{ invoice.get_payment_method_display }}</div>
+    {% if invoice.customer %}<div>Customer: {{ invoice.customer.name }}</div>{% endif %}
+    <div class="line"></div>
+    <table>
+        <thead><tr><th>Item</th><th>Amount</th></tr></thead>
+        <tbody>
+            {% for item in receipt_items %}
+                <tr>
+                    <td>{{ item.product.name }}<br>{{ item.quantity }} × {{ item.price_at_sale|floatformat:2 }}</td>
+                    <td>KSh {{ item.line_total|floatformat:2 }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="line"></div>
+    <table class="total"><tr><td>TOTAL</td><td>KSh {{ invoice.total_amount|floatformat:2 }}</td></tr></table>
+    <div class="line"></div>
+    <p class="center">Thank you for your business.</p>
+    <button type="button" onclick="window.print()">Print receipt</button>
+    <script>window.onload = function() { window.print(); }</script>
+</body>
+</html>

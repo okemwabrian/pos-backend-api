@@ -21,6 +21,7 @@ class Product(models.Model):
     wholesale_price = models.DecimalField(max_digits=10, decimal_places=2)
     
     # Stock Management
+    is_service = models.BooleanField(default=False)
     stock_quantity = models.IntegerField(default=0)
     low_stock_threshold = models.IntegerField(default=10)
     

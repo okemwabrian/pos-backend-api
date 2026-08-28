@@ -1,3 +1,3 @@
-from django.shortcuts import render
+from core.views import dashboard_view
 
-# Create your views here.
+__all__ = ["dashboard_view"]

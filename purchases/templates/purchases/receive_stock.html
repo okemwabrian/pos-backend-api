@@ -1,0 +1,31 @@
+{% extends "sales/base.html" %}
+
+{% block title %}Receive Stock{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="h2 mb-4">Pending Purchase Orders</h1>
+    {% for order in purchase_orders %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <h2 class="h5">PO #{{ order.pk }} — {{ order.supplier|default:"No supplier" }}</h2>
+                        <p class="text-muted mb-2">Created {{ order.order_date|date:"d M Y, H:i" }}</p>
+                        <ul class="mb-0">
+                            {% for item in order.items.all %}<li>{{ item.product.name }}: {{ item.quantity }}</li>{% endfor %}
+                        </ul>
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="purchase_order_id" value="{{ order.pk }}">
+                        <button class="btn btn-success" type="submit">Mark received</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-info">There are no pending purchase orders.</div>
+    {% endfor %}
+</div>
+{% endblock %}
