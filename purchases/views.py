@@ -1,9 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
+from django.db.models import F
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
+from django.utils import timezone
 
+from inventory.models import Product
 from .models import PurchaseOrder
 from core.permissions import is_admin_or_manager
 
@@ -21,12 +24,27 @@ def receive_stock_view(request):
             is_received=False,
         )
 
-        for item in purchase_order.items.select_related("product").select_for_update():
-            item.product.stock_quantity += item.quantity
-            item.product.save(update_fields=["stock_quantity", "updated_at"])
+        received_quantities = {}
+        for item in purchase_order.items.all():
+            received_quantities[item.product_id] = (
+                received_quantities.get(item.product_id, 0) + item.quantity
+            )
+
+        if not received_quantities:
+            messages.error(request, "This purchase order has no items to receive.")
+            return redirect("purchases:receive_stock")
+
+        locked_products = Product.objects.select_for_update().filter(
+            pk__in=received_quantities
+        )
+        for product in locked_products:
+            product.stock_quantity = F("stock_quantity") + received_quantities[product.pk]
+            product.save(update_fields=["stock_quantity", "updated_at"])
 
         purchase_order.is_received = True
-        purchase_order.save(update_fields=["is_received"])
+        purchase_order.received_by = request.user
+        purchase_order.received_at = timezone.now()
+        purchase_order.save(update_fields=["is_received", "received_by", "received_at"])
         messages.success(request, f"Purchase order #{purchase_order.pk} received.")
         return redirect("purchases:receive_stock")
 

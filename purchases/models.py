@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from crm.models import Supplier
 from inventory.models import Product
 
@@ -7,6 +8,9 @@ class PurchaseOrder(models.Model):
     order_date = models.DateTimeField(auto_now_add=True)
     total_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_received = models.BooleanField(default=False)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="purchase_orders_created", on_delete=models.SET_NULL)
+    received_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="purchase_orders_received", on_delete=models.SET_NULL)
+    received_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"PO #{self.id} - {self.supplier}"

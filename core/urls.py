@@ -16,14 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('users.urls')),
+    path('settings/', views.settings_view, name='settings'),
+    path('reports/', views.reports_view, name='reports'),
+    path('reports/<str:report_type>/export/', views.reports_csv_view, name='reports_csv'),
     # Connect the inventory API endpoints
-    path('api/inventory/', include('inventory.urls')), 
-    path('api/crm/', include('crm.urls')),      # Connects Customers & Suppliers
+    path('api/inventory/', include('inventory.api_urls')),
+    path('inventory/', include('inventory.urls')),
+    path('api/crm/', include('crm.api_urls')),  # Connects Customers & Suppliers
+    path('crm/', include('crm.urls')),
     path('api/sales/', include('sales.api_urls')),
     path('sales/', include('sales.urls')),
     path('purchases/', include('purchases.urls')),

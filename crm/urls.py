@@ -1,11 +1,9 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import CustomerViewSet, SupplierViewSet
+from django.urls import path
+from .views import customers_view, suppliers_view
 
-router = DefaultRouter()
-router.register(r'customers', CustomerViewSet)
-router.register(r'suppliers', SupplierViewSet)
+app_name = "crm"
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('customers/', customers_view, name='customers'),
+    path('suppliers/', suppliers_view, name='suppliers'),
 ]

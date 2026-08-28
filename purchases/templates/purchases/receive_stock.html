@@ -1,31 +1,18 @@
-{% extends "sales/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Receive Stock{% endblock %}
+{% block title %}Receive Stock | CorePoint POS{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <h1 class="h2 mb-4">Pending Purchase Orders</h1>
-    {% for order in purchase_orders %}
-        <div class="card shadow-sm mb-3">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start gap-3">
-                    <div>
-                        <h2 class="h5">PO #{{ order.pk }} — {{ order.supplier|default:"No supplier" }}</h2>
-                        <p class="text-muted mb-2">Created {{ order.order_date|date:"d M Y, H:i" }}</p>
-                        <ul class="mb-0">
-                            {% for item in order.items.all %}<li>{{ item.product.name }}: {{ item.quantity }}</li>{% endfor %}
-                        </ul>
-                    </div>
-                    <form method="post">
-                        {% csrf_token %}
-                        <input type="hidden" name="purchase_order_id" value="{{ order.pk }}">
-                        <button class="btn btn-success" type="submit">Mark received</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    {% empty %}
-        <div class="alert alert-info">There are no pending purchase orders.</div>
-    {% endfor %}
-</div>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><div><h1 class="h2 mb-1"><i class="fa-solid fa-truck-ramp-box me-2 text-primary"></i>Receive Stock</h1><p class="text-muted mb-0">Confirm pending purchase orders to add their quantities to inventory.</p></div></div>
+<div class="app-card card"><div class="card-body p-0">
+    <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th class="ps-4">Purchase order</th><th>Supplier</th><th>Ordered items</th><th>Created</th><th class="text-end pe-4">Action</th></tr></thead>
+        <tbody>{% for order in purchase_orders %}<tr>
+            <td class="ps-4 fw-semibold"><i class="fa-solid fa-file-invoice me-1 text-primary"></i>PO #{{ order.pk }}</td><td>{{ order.supplier|default:"No supplier" }}</td>
+            <td><ul class="list-unstyled mb-0 small">{% for item in order.items.all %}<li><i class="fa-solid fa-box me-1 text-secondary"></i>{{ item.product.name }} <span class="badge text-bg-light border">+{{ item.quantity }}</span></li>{% endfor %}</ul></td>
+            <td class="text-muted">{{ order.order_date|date:"d M Y, H:i" }}</td>
+            <td class="text-end pe-4"><form method="post">{% csrf_token %}<input type="hidden" name="purchase_order_id" value="{{ order.pk }}"><button class="btn btn-success btn-sm" type="submit"><i class="fa-solid fa-check me-1"></i>Receive</button></form></td>
+        </tr>{% empty %}<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fa-solid fa-clipboard-check d-block fs-2 mb-2"></i>All purchase orders have been received.</td></tr>{% endfor %}</tbody>
+    </table></div>
+</div></div>
 {% endblock %}

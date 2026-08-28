@@ -12,3 +12,20 @@ class CustomUser(django.contrib.auth.models.AbstractUser):
 
     def __str__(self):
         return f"{self.username} - {self.get_role_display()}"
+
+
+class ShopSettings(models.Model):
+    shop_name = models.CharField(max_length=150, default="CorePoint POS")
+    phone = models.CharField(max_length=30, blank=True)
+    email = models.EmailField(blank=True)
+    address = models.TextField(blank=True)
+    currency = models.CharField(max_length=10, default="KSh")
+    low_stock_alerts = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        return cls.objects.get_or_create(pk=1)[0]

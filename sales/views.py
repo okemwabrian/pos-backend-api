@@ -1,17 +1,20 @@
+import csv
 import json
 from collections import Counter
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 from rest_framework import viewsets
 
 from inventory.models import Product
-from .models import Invoice, InvoiceItem
+from crm.models import Customer
+from .models import Invoice, InvoiceItem, Quotation, QuotationItem
 from .serializers import InvoiceSerializer
 
 class InvoiceViewSet(viewsets.ModelViewSet):
@@ -28,17 +31,25 @@ def pos_terminal_view(request):
     ).order_by("name")
 
     if request.method == "GET":
-        return render(request, "sales/pos_terminal.html", {"products": products})
+        return render(request, "sales/pos_terminal.html", {"products": products, "customers": Customer.objects.order_by("name")})
 
     try:
         submitted_cart = json.loads(request.POST.get("cart", "[]"))
         payment_method = request.POST.get("payment_method", "cash")
         price_type = request.POST.get("price_type", "retail")
+        action = request.POST.get("action", "invoice")
+        customer_id = request.POST.get("customer_id")
+        discount = Decimal(request.POST.get("discount", "0") or "0")
+        comment = request.POST.get("comment", "").strip()
 
         if payment_method not in dict(Invoice.PAYMENT_CHOICES):
             raise ValueError("Choose a valid payment method.")
         if price_type not in {"retail", "wholesale"}:
             raise ValueError("Choose a valid price type.")
+        if action not in {"invoice", "quotation"}:
+            raise ValueError("Choose a valid checkout action.")
+        if discount < 0:
+            raise ValueError("Discount cannot be negative.")
 
         quantities = Counter()
         for item in submitted_cart:
@@ -59,7 +70,7 @@ def pos_terminal_view(request):
         if len(products_by_id) != len(quantities):
             raise ValueError("One or more selected products no longer exist.")
 
-        total_amount = Decimal("0.00")
+        subtotal = Decimal("0.00")
         sale_lines = []
 
         for product_id, quantity in quantities.items():
@@ -75,13 +86,26 @@ def pos_terminal_view(request):
                 if price_type == "wholesale"
                 else product.retail_price
             )
-            total_amount += price_at_sale * quantity
+            subtotal += price_at_sale * quantity
             sale_lines.append((product, quantity, price_at_sale))
+
+        if discount > subtotal:
+            raise ValueError("Discount cannot exceed the cart subtotal.")
+        customer = Customer.objects.filter(pk=customer_id).first() if customer_id else None
+        total_amount = subtotal - discount
+        if action == "quotation":
+            quotation = Quotation.objects.create(customer=customer, cashier=request.user, subtotal=subtotal, discount_amount=discount, total_amount=total_amount, comment=comment)
+            QuotationItem.objects.bulk_create([QuotationItem(quotation=quotation, product=product, quantity=quantity, price_at_quote=price) for product, quantity, price in sale_lines])
+            messages.success(request, f"Quotation #{quotation.pk} saved. Stock was not deducted.")
+            return redirect("sales:quotation_detail", quotation_id=quotation.pk)
 
         invoice = Invoice.objects.create(
             cashier=request.user,
+            customer=customer,
             payment_method=payment_method,
             total_amount=total_amount,
+            discount_amount=discount,
+            comment=comment,
         )
 
         InvoiceItem.objects.bulk_create(
@@ -102,7 +126,7 @@ def pos_terminal_view(request):
             product.stock_quantity -= quantity
             product.save(update_fields=["stock_quantity", "updated_at"])
 
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError, InvalidOperation) as error:
         transaction.set_rollback(True)
         messages.error(request, str(error) or "The submitted cart is invalid.")
         return redirect("sales:pos_terminal")
@@ -128,3 +152,23 @@ def generate_receipt_pdf(request, invoice_id):
         "sales/receipt.html",
         {"invoice": invoice, "receipt_items": receipt_items},
     )
+
+
+@login_required
+def quotation_detail_view(request, quotation_id):
+    quotation = get_object_or_404(Quotation.objects.select_related("customer", "cashier").prefetch_related("items__product"), pk=quotation_id)
+    return render(request, "sales/quotation_detail.html", {"quotation": quotation})
+
+
+@login_required
+def quotation_csv_view(request, quotation_id):
+    quotation = get_object_or_404(Quotation.objects.prefetch_related("items__product"), pk=quotation_id)
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="quotation-{quotation.pk}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Product", "Quantity", "Unit price", "Line total"])
+    for item in quotation.items.all():
+        writer.writerow([item.product.name, item.quantity, item.price_at_quote, item.quantity * item.price_at_quote])
+    writer.writerow(["", "", "Discount", quotation.discount_amount])
+    writer.writerow(["", "", "Total", quotation.total_amount])
+    return response

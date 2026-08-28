@@ -1,42 +1,49 @@
-{% extends "sales/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard | CorePoint POS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .metric-card { border: 0; border-radius: 1rem; box-shadow: 0 .25rem .75rem rgba(33, 37, 41, .10); }
+    .metric-icon { font-size: 2.75rem; opacity: .35; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <h1 class="h2">Welcome, {{ request.user.get_full_name|default:request.user.username }}</h1>
-    <p class="text-muted">Choose an area to continue.</p>
-    <div class="mb-4">
-        <a class="btn btn-primary" href="{% url 'sales:pos_terminal' %}">Open POS terminal</a>
-        <a class="btn btn-outline-secondary" href="{% url 'purchases:receive_stock' %}">Receive stock</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h2 mb-1"><i class="fa-solid fa-gauge-high me-2 text-primary"></i>Dashboard</h1>
+        <p class="text-muted mb-0">Welcome back, {{ request.user.get_full_name|default:request.user.username }}.</p>
     </div>
-
-    <section class="card shadow-sm" style="max-width: 560px;">
-        <div class="card-body">
-            <h2 class="h4">Record an expense</h2>
-            <form method="post" novalidate>
-                {% csrf_token %}
-                {% if expense_form.non_field_errors %}
-                    <div class="alert alert-danger">{{ expense_form.non_field_errors }}</div>
-                {% endif %}
-                <div class="mb-3">
-                    <label class="form-label" for="{{ expense_form.category.id_for_label }}">Category</label>
-                    {{ expense_form.category }}
-                    <div class="text-danger small">{{ expense_form.category.errors }}</div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" for="{{ expense_form.description.id_for_label }}">Description</label>
-                    {{ expense_form.description }}
-                    <div class="text-danger small">{{ expense_form.description.errors }}</div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label" for="{{ expense_form.amount.id_for_label }}">Amount</label>
-                    {{ expense_form.amount }}
-                    <div class="text-danger small">{{ expense_form.amount.errors }}</div>
-                </div>
-                <button class="btn btn-success" type="submit">Save expense</button>
-            </form>
-        </div>
-    </section>
 </div>
+
+<section class="row g-3 mb-4">
+    <div class="col-md-4"><article class="metric-card card text-bg-success h-100"><div class="card-body d-flex justify-content-between align-items-center"><div><p class="mb-1">Total Revenue</p><h2 class="h3 mb-0">KSh {{ revenue|floatformat:2 }}</h2></div><i class="metric-icon fa-solid fa-chart-line"></i></div></article></div>
+    <div class="col-md-4"><article class="metric-card card text-bg-danger h-100"><div class="card-body d-flex justify-content-between align-items-center"><div><p class="mb-1">Total Expenses</p><h2 class="h3 mb-0">KSh {{ expenses|floatformat:2 }}</h2></div><i class="metric-icon fa-solid fa-receipt"></i></div></article></div>
+    <div class="col-md-4"><article class="metric-card card text-bg-primary h-100"><div class="card-body d-flex justify-content-between align-items-center"><div><p class="mb-1">Net Profit</p><h2 class="h3 mb-0">KSh {{ profit|floatformat:2 }}</h2></div><i class="metric-icon fa-solid fa-wallet"></i></div></article></div>
+</section>
+
+<section class="row g-4">
+    <div class="col-lg-7"><article class="app-card card h-100"><div class="card-body p-4"><h2 class="h5 mb-4"><i class="fa-solid fa-chart-pie me-2 text-primary"></i>Revenue vs Expenses</h2><div style="height: 320px;"><canvas id="financeChart"></canvas></div></div></article></div>
+    <div class="col-lg-5"><article class="app-card card h-100"><div class="card-body p-4"><h2 class="h5 mb-3"><i class="fa-solid fa-money-bill-wave me-2 text-success"></i>Record Daily Expense</h2>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% if expense_form.non_field_errors %}<div class="alert alert-danger">{{ expense_form.non_field_errors }}</div>{% endif %}
+            <div class="mb-3"><label class="form-label" for="{{ expense_form.category.id_for_label }}">Category</label>{{ expense_form.category }}<div class="small text-danger">{{ expense_form.category.errors }}</div></div>
+            <div class="mb-3"><label class="form-label" for="{{ expense_form.description.id_for_label }}">Description</label>{{ expense_form.description }}<div class="small text-danger">{{ expense_form.description.errors }}</div></div>
+            <div class="mb-3"><label class="form-label" for="{{ expense_form.amount.id_for_label }}">Amount</label>{{ expense_form.amount }}<div class="small text-danger">{{ expense_form.amount.errors }}</div></div>
+            <button type="submit" class="btn btn-success w-100"><i class="fa-solid fa-floppy-disk me-1"></i>Save Expense</button>
+        </form>
+    </div></article></div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    new Chart(document.getElementById('financeChart'), {
+        type: 'doughnut',
+        data: { labels: ['Revenue', 'Expenses'], datasets: [{ data: [{{ chart_revenue }}, {{ chart_expenses }}], backgroundColor: ['#198754', '#dc3545'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+</script>
 {% endblock %}
