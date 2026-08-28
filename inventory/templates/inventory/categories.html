@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Categories | CorePoint POS{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <section class="col-lg-5">
+        <div class="app-card card"><div class="card-body">
+            <h1 class="h4">{% if edit_id %}Edit{% else %}Add{% endif %} Category</h1>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% if edit_id %}<input type="hidden" name="id" value="{{ edit_id }}">{% endif %}
+                {% for field in form %}
+                    <div class="mb-3"><label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}<div class="small text-danger">{{ field.errors }}</div></div>
+                {% endfor %}
+                <button class="btn btn-primary"><i class="fa-solid fa-floppy-disk me-1"></i>Save Category</button>
+                {% if edit_id %}<a class="btn btn-light" href="{% url 'inventory:categories' %}">Cancel</a>{% endif %}
+            </form>
+        </div></div>
+    </section>
+    <section class="col-lg-7">
+        <div class="app-card card"><div class="card-body">
+            <h1 class="h4">Product Categories</h1>
+            <div class="table-responsive"><table class="table table-hover align-middle">
+                <thead><tr><th>Name</th><th>Products</th><th>Image</th><th>Description</th><th></th></tr></thead>
+                <tbody>{% for category in categories %}<tr>
+                    <td class="fw-semibold">{{ category.name }}</td><td>{{ category.products.count }}</td><td>{% if category.image_url %}<img src="{{ category.image_url }}" alt="" width="42" height="30" class="rounded object-fit-cover">{% else %}<span class="text-muted small">Default</span>{% endif %}</td><td class="text-muted">{{ category.description|default:"—" }}</td>
+                    <td class="text-end"><form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="id" value="{{ category.pk }}"><button class="btn btn-sm btn-outline-primary">Edit</button></form><form method="post" class="d-inline">{% csrf_token %}<input type="hidden" name="id" value="{{ category.pk }}"><input type="hidden" name="delete" value="1"><button class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this category? Its products will become uncategorised.')"><i class="fa-solid fa-trash"></i></button></form></td>
+                </tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">No categories yet.</td></tr>{% endfor %}</tbody>
+            </table></div>
+        </div></div>
+    </section>
+</div>
+{% endblock %}

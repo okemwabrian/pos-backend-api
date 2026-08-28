@@ -17,6 +17,26 @@ from core.permissions import is_admin_or_manager
 @transaction.atomic
 def receive_stock_view(request):
     if request.method == "POST":
+        if request.POST.get("action") == "quick_restock":
+            product_id = request.POST.get("product_id")
+            try:
+                quantity = int(request.POST.get("quantity", ""))
+            except (TypeError, ValueError):
+                quantity = 0
+
+            product = Product.objects.select_for_update().filter(
+                pk=product_id, is_service=False
+            ).first()
+            if not product:
+                messages.error(request, "Choose a valid stock-tracked product.")
+            elif quantity < 1:
+                messages.error(request, "Restock quantity must be at least 1.")
+            else:
+                product.stock_quantity = F("stock_quantity") + quantity
+                product.save(update_fields=["stock_quantity", "updated_at"])
+                messages.success(request, f"Added {quantity} units to {product.name}.")
+            return redirect("purchases:receive_stock")
+
         purchase_order_id = request.POST.get("purchase_order_id")
         purchase_order = get_object_or_404(
             PurchaseOrder.objects.select_for_update(),
@@ -54,5 +74,8 @@ def receive_stock_view(request):
     return render(
         request,
         "purchases/receive_stock.html",
-        {"purchase_orders": purchase_orders},
+        {
+            "purchase_orders": purchase_orders,
+            "products": Product.objects.filter(is_service=False).order_by("name"),
+        },
     )

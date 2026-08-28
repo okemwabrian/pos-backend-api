@@ -14,13 +14,15 @@
         th { text-align: left; }
         th:last-child, td:last-child { text-align: right; }
         .total { font-size: 14px; font-weight: bold; }
-        button { margin: 1rem 0; width: 100%; padding: .5rem; }
-        @media print { button { display: none; } }
+        button, .back-link { margin: 1rem 0 .25rem; width: 100%; padding: .5rem; display: block; text-align: center; }
+        .back-link { color: #000; }
+        @media print { button, .back-link { display: none; } }
     </style>
 </head>
 <body>
     <div class="center">
-        <strong>POS RECEIPT</strong><br>
+        <strong>{{ shop_name|upper }}</strong><br>
+        POS RECEIPT<br>
         Invoice #{{ invoice.pk }}<br>
         {{ invoice.created_at|date:"d M Y, H:i" }}
     </div>
@@ -45,6 +47,7 @@
     <div class="line"></div>
     <p class="center">Thank you for your business.</p>
     <button type="button" onclick="window.print()">Print receipt</button>
+    <a class="back-link" href="{% url 'sales:pos_terminal' %}">Back to POS</a>
     <script>window.onload = function() { window.print(); }</script>
 </body>
 </html>

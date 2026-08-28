@@ -19,7 +19,6 @@ class ShopSettings(models.Model):
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
     address = models.TextField(blank=True)
-    currency = models.CharField(max_length=10, default="KSh")
     low_stock_alerts = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):

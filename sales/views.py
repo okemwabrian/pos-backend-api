@@ -4,25 +4,28 @@ from collections import Counter
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 from rest_framework import viewsets
 
-from inventory.models import Product
+from inventory.models import Category, Product
 from crm.models import Customer
 from .models import Invoice, InvoiceItem, Quotation, QuotationItem
 from .serializers import InvoiceSerializer
+from core.permissions import IsAdminOrManager, can_use_pos
 
 class InvoiceViewSet(viewsets.ModelViewSet):
     queryset = Invoice.objects.all().order_by('-created_at')
     serializer_class = InvoiceSerializer
+    permission_classes = [IsAdminOrManager]
 
 
 @login_required
+@user_passes_test(can_use_pos)
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
 def pos_terminal_view(request):
@@ -31,7 +34,24 @@ def pos_terminal_view(request):
     ).order_by("name")
 
     if request.method == "GET":
-        return render(request, "sales/pos_terminal.html", {"products": products, "customers": Customer.objects.order_by("name")})
+        return render(
+            request,
+            "sales/pos_terminal.html",
+            {
+                "products": products.select_related("category"),
+                "categories": Category.objects.filter(products__in=products)
+                .distinct()
+                .annotate(
+                    product_count=Count(
+                        "products",
+                        filter=Q(products__stock_quantity__gt=0)
+                        | Q(products__is_service=True),
+                    )
+                )
+                .order_by("name"),
+                "customers": Customer.objects.order_by("name"),
+            },
+        )
 
     try:
         submitted_cart = json.loads(request.POST.get("cart", "[]"))
@@ -97,7 +117,7 @@ def pos_terminal_view(request):
             quotation = Quotation.objects.create(customer=customer, cashier=request.user, subtotal=subtotal, discount_amount=discount, total_amount=total_amount, comment=comment)
             QuotationItem.objects.bulk_create([QuotationItem(quotation=quotation, product=product, quantity=quantity, price_at_quote=price) for product, quantity, price in sale_lines])
             messages.success(request, f"Quotation #{quotation.pk} saved. Stock was not deducted.")
-            return redirect("sales:quotation_detail", quotation_id=quotation.pk)
+            return redirect("sales:bills_quotes")
 
         invoice = Invoice.objects.create(
             cashier=request.user,
@@ -132,10 +152,11 @@ def pos_terminal_view(request):
         return redirect("sales:pos_terminal")
 
     messages.success(request, f"Invoice #{invoice.pk} completed successfully.")
-    return redirect("sales:pos_terminal")
+    return redirect("sales:receipt", invoice_id=invoice.pk)
 
 
 @login_required
+@user_passes_test(can_use_pos)
 def generate_receipt_pdf(request, invoice_id):
     invoice = get_object_or_404(
         Invoice.objects.select_related("cashier", "customer").prefetch_related(
@@ -155,12 +176,39 @@ def generate_receipt_pdf(request, invoice_id):
 
 
 @login_required
+@user_passes_test(can_use_pos)
+def bills_and_quotes_view(request):
+    """Display lists of Invoices (Bills) and Quotations in a single view.
+
+    Both QuerySets are ordered by most recent creation date.
+    """
+    invoices = (
+        Invoice.objects.select_related("customer", "cashier")
+        .prefetch_related("items__product")
+        .order_by("-created_at")
+    )
+    quotations = (
+        Quotation.objects.select_related("customer", "cashier")
+        .prefetch_related("items__product")
+        .order_by("-created_at")
+    )
+
+    return render(
+        request,
+        "sales/bills_quotes.html",
+        {"invoices": invoices, "quotations": quotations},
+    )
+
+
+@login_required
+@user_passes_test(can_use_pos)
 def quotation_detail_view(request, quotation_id):
     quotation = get_object_or_404(Quotation.objects.select_related("customer", "cashier").prefetch_related("items__product"), pk=quotation_id)
     return render(request, "sales/quotation_detail.html", {"quotation": quotation})
 
 
 @login_required
+@user_passes_test(can_use_pos)
 def quotation_csv_view(request, quotation_id):
     quotation = get_object_or_404(Quotation.objects.prefetch_related("items__product"), pk=quotation_id)
     response = HttpResponse(content_type="text/csv")

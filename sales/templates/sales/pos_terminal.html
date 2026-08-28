@@ -1,76 +1,65 @@
 {% extends "base.html" %}
 
-{% block title %}POS Terminal | CorePoint POS{% endblock %}
+{% block title %}POS Terminal | {{ shop_name }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .category-rail { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 1rem; }
+    .category-card { position: relative; min-height: 148px; overflow: hidden; border: 0; border-radius: 1rem; padding: 0; text-align: start; isolation: isolate; background: #174d3b; color: #fff; box-shadow: 0 .35rem 1rem rgba(13, 59, 46, .14); transition: transform .18s ease, box-shadow .18s ease; }
+    .category-card::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(0deg, rgba(4, 30, 22, .88), rgba(4, 30, 22, .08)); }
+    .category-card:hover, .category-card.active { transform: translateY(-3px); box-shadow: 0 .65rem 1.25rem rgba(13, 59, 46, .25); }
+    .category-card.active { outline: 3px solid var(--gold); outline-offset: 2px; }
+    .category-card img { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; object-fit: cover; }
+    .category-card .fallback-image { position: absolute; inset: 0; z-index: -2; display: grid; place-items: center; background: linear-gradient(135deg, #18513d, #0b3024); color: rgba(255,255,255,.28); font-size: 3rem; }
+    .category-card-content { position: absolute; inset: auto 0 0; padding: .9rem; }
+    .category-card-title { display: block; font-size: 1rem; font-weight: 750; } .category-card-count { display: block; color: #e4eede; font-size: .78rem; }
+    .product-tile { border: 1px solid #e5ece7; box-shadow: none; transition: transform .18s ease, border-color .18s ease; } .product-tile:hover { transform: translateY(-2px); border-color: #8ab39f; } .product-image { width: 100%; height: 130px; object-fit: cover; }
+    #barcode-reader { width: 100%; overflow: hidden; border-radius: .75rem; background: #102d23; } #barcode-reader video { border-radius: .75rem; }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="row g-4">
-    <section class="col-md-8">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div><h1 class="h2 mb-1"><i class="fa-solid fa-store me-2 text-primary"></i>POS Terminal</h1><p class="text-muted mb-0">Select products or services to add to this sale.</p></div>
-            <span class="badge text-bg-primary rounded-pill px-3 py-2"><i class="fa-solid fa-boxes-stacked me-1"></i>{{ products|length }} available</span>
+    <section class="col-xl-8">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><h1 class="h2 mb-1"><i class="fas fa-cash-register me-2 text-primary"></i>POS Terminal</h1><p class="text-muted mb-0">Choose a category or scan a barcode to build this sale.</p></div><div class="d-flex align-items-center gap-2"><span class="badge text-bg-light border text-dark rounded-pill px-3 py-2">{{ products|length }} available</span><button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#barcodeScannerModal"><i class="fas fa-camera me-1"></i>Scan Barcode</button></div></div>
+
+        <section aria-labelledby="category-heading" class="mb-4"><h2 id="category-heading" class="h6 text-uppercase text-muted fw-bold small mb-3">Shop by category</h2><div class="category-rail">
+            <button type="button" class="category-card active" data-category="all"><span class="fallback-image"><i class="fas fa-grid-2"></i></span><span class="category-card-content"><span class="category-card-title">All Products</span><span class="category-card-count">{{ products|length }} available</span></span></button>
+            {% for category in categories %}<button type="button" class="category-card" data-category="{{ category.pk }}">{% if category.image_url %}<img src="{{ category.image_url }}" alt="">{% else %}<span class="fallback-image"><i class="fas fa-tags"></i></span>{% endif %}<span class="category-card-content"><span class="category-card-title">{{ category.name }}</span><span class="category-card-count">{{ category.product_count }} product{{ category.product_count|pluralize }}</span></span></button>{% endfor %}
+        </div></section>
+
+        <div class="d-flex justify-content-between align-items-center mb-3"><h2 class="h5 mb-0" id="product-grid-title">All Products</h2><span id="product-count" class="small text-muted"></span></div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xxl-3 g-3" id="product-grid">
+            {% for product in products %}<div class="col product-card" data-category="{{ product.category_id|default:'uncategorised' }}"><article class="product-tile app-card card h-100">{% if product.image_url %}<img class="product-image card-img-top" src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">{% endif %}<div class="card-body d-flex flex-column"><div class="d-flex justify-content-between gap-2"><h3 class="h6 mb-1">{{ product.name }}</h3>{% if product.is_service %}<span class="badge text-bg-info">Service</span>{% endif %}</div><p class="small text-muted mb-2"><i class="fas fa-barcode me-1"></i>{{ product.sku }}</p><p class="small text-muted mb-3">{% if product.is_service %}<i class="fas fa-screwdriver-wrench me-1"></i>No stock deduction{% else %}<i class="fas fa-cubes me-1"></i>{{ product.stock_quantity }} in stock{% endif %}</p><p class="fs-5 fw-bold mt-auto mb-3">KSh <span class="display-price">{{ product.retail_price|floatformat:2 }}</span></p><button type="button" class="btn btn-outline-primary add-product" data-id="{{ product.pk }}" data-sku="{{ product.sku }}" data-name="{{ product.name|escapejs }}" data-retail-price="{{ product.retail_price }}" data-wholesale-price="{{ product.wholesale_price }}" data-stock="{{ product.stock_quantity }}" data-is-service="{{ product.is_service|yesno:'true,false' }}"><i class="fas fa-cart-plus me-1"></i>Add</button></div></article></div>{% empty %}<div class="col-12"><div class="alert alert-info">There are no products or services available.</div></div>{% endfor %}
         </div>
-        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-3">
-            {% for product in products %}
-                <div class="col"><article class="app-card card h-100"><div class="card-body d-flex flex-column">
-                    <div class="d-flex justify-content-between gap-2"><h2 class="h6 mb-1">{{ product.name }}</h2>{% if product.is_service %}<span class="badge text-bg-info">Service</span>{% endif %}</div>
-                    <p class="small text-muted mb-2"><i class="fa-solid fa-barcode me-1"></i>{{ product.sku }}</p>
-                    <p class="small text-muted">{% if product.is_service %}<i class="fa-solid fa-screwdriver-wrench me-1"></i>No stock deduction{% else %}<i class="fa-solid fa-cubes me-1"></i>{{ product.stock_quantity }} in stock{% endif %}</p>
-                    <p class="fs-5 fw-bold mt-auto mb-3">KSh <span class="display-price">{{ product.retail_price|floatformat:2 }}</span></p>
-                    <button type="button" class="btn btn-outline-primary add-product" data-id="{{ product.pk }}" data-name="{{ product.name|escapejs }}" data-retail-price="{{ product.retail_price }}" data-wholesale-price="{{ product.wholesale_price }}" data-stock="{{ product.stock_quantity }}" data-is-service="{{ product.is_service|yesno:'true,false' }}"><i class="fa-solid fa-cart-plus me-1"></i>Add</button>
-                </div></article></div>
-            {% empty %}
-                <div class="col-12"><div class="alert alert-info"><i class="fa-solid fa-circle-info me-1"></i>There are no products or services available.</div></div>
-            {% endfor %}
-        </div>
+        <p id="no-category-products" class="alert alert-info mt-3 d-none mb-0">No available products in this category.</p><p id="scan-feedback" class="alert mt-3 d-none mb-0" role="status"></p>
     </section>
 
-    <aside class="col-md-4">
-        <div class="app-card card sticky-md-top" style="top: 1rem;">
-            <div class="card-header bg-dark text-white py-3"><h2 class="h5 mb-0"><i class="fa-solid fa-cart-shopping me-2"></i>Shopping Cart</h2></div>
-            <form method="post" id="checkout-form">
-                {% csrf_token %}<input type="hidden" name="cart" id="cart-data">
-                <div class="card-body"><div id="cart-items"><p class="text-muted text-center my-4"><i class="fa-solid fa-basket-shopping d-block fs-3 mb-2"></i>Your cart is empty.</p></div>
-                    <div class="row g-3 mt-1"><div class="col-sm-6 col-md-12 col-lg-6"><label for="payment-method" class="form-label">Payment</label><select class="form-select" name="payment_method" id="payment-method"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="card">Card</option></select></div><div class="col-sm-6 col-md-12 col-lg-6"><label for="price-type" class="form-label">Price type</label><select class="form-select" name="price_type" id="price-type"><option value="retail">Retail</option><option value="wholesale">Wholesale</option></select></div><div class="col-12"><label for="customer-id" class="form-label">Customer</label><select class="form-select" name="customer_id" id="customer-id"><option value="">Walk-in customer</option>{% for customer in customers %}<option value="{{ customer.pk }}">{{ customer.name }}{% if customer.phone %} — {{ customer.phone }}{% endif %}</option>{% endfor %}</select></div><div class="col-sm-6"><label for="discount" class="form-label">Discount (KSh)</label><input class="form-control" type="number" name="discount" id="discount" min="0" step="0.01" value="0"></div><div class="col-sm-6"><label for="comment" class="form-label">Comment</label><input class="form-control" name="comment" id="comment" maxlength="500"></div></div>
-                    <hr><div class="d-flex justify-content-between small text-muted"><span>Subtotal</span><span>KSh <span id="cart-subtotal">0.00</span></span></div><div class="d-flex justify-content-between align-items-center fs-5 fw-bold mt-1"><span>Total</span><span>KSh <span id="cart-total">0.00</span></span></div>
-                </div>
-                <div class="card-footer d-grid gap-2"><button id="checkout-button" name="action" value="invoice" class="btn btn-success btn-lg" disabled><i class="fa-solid fa-circle-check me-1"></i>Complete Sale</button><button name="action" value="quotation" class="btn btn-outline-primary" id="quotation-button" disabled><i class="fa-solid fa-file-lines me-1"></i>Save as Quotation</button></div>
-            </form>
-        </div>
-    </aside>
+    <aside class="col-xl-4"><div class="app-card card sticky-xl-top" style="top: 1rem;"><div class="card-header bg-dark text-white py-3"><h2 class="h5 mb-0"><i class="fas fa-cart-shopping me-2"></i>Shopping Cart</h2></div><form method="post" id="checkout-form">{% csrf_token %}<input type="hidden" name="cart" id="cart-data"><div class="card-body"><div id="cart-items"><p class="text-muted text-center my-4"><i class="fas fa-basket-shopping d-block fs-3 mb-2"></i>Your cart is empty.</p></div><div class="row g-3 mt-1"><div class="col-sm-6 col-xl-12 col-xxl-6"><label for="payment-method" class="form-label">Payment</label><select class="form-select" name="payment_method" id="payment-method"><option value="cash">Cash</option><option value="mpesa">M-Pesa</option><option value="card">Card</option></select></div><div class="col-sm-6 col-xl-12 col-xxl-6"><label for="price-type" class="form-label">Price type</label><select class="form-select" name="price_type" id="price-type"><option value="retail">Retail</option><option value="wholesale">Wholesale</option></select></div><div class="col-12"><label for="customer-id" class="form-label">Customer</label><select class="form-select" name="customer_id" id="customer-id"><option value="">Walk-in customer</option>{% for customer in customers %}<option value="{{ customer.pk }}">{{ customer.name }}{% if customer.phone %} — {{ customer.phone }}{% endif %}</option>{% endfor %}</select></div><div class="col-sm-6"><label for="discount" class="form-label">Discount (KSh)</label><input class="form-control" type="number" name="discount" id="discount" min="0" step="0.01" value="0"></div><div class="col-sm-6"><label for="comment" class="form-label">Comment</label><input class="form-control" name="comment" id="comment" maxlength="500"></div></div><hr><div class="d-flex justify-content-between small text-muted"><span>Subtotal</span><span>KSh <span id="cart-subtotal">0.00</span></span></div><div class="d-flex justify-content-between align-items-center fs-5 fw-bold mt-1"><span>Total</span><span>KSh <span id="cart-total">0.00</span></span></div></div><div class="card-footer d-grid gap-2"><button id="checkout-button" name="action" value="invoice" class="btn btn-primary btn-lg" disabled><i class="fas fa-circle-check me-1"></i>Complete Sale</button><button name="action" value="quotation" class="btn btn-outline-primary" id="quotation-button" disabled><i class="fas fa-file-lines me-1"></i>Save as Quotation</button></div></form></div></aside>
 </div>
+
+<div class="modal fade" id="barcodeScannerModal" tabindex="-1" aria-labelledby="barcodeScannerTitle" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title fs-5" id="barcodeScannerTitle"><i class="fas fa-camera me-2 text-primary"></i>Scan Product Barcode</h2><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><p class="small text-muted">Allow camera access, then place the product barcode inside the frame. Camera scanning requires HTTPS outside localhost.</p><div id="barcode-reader"></div><p id="scanner-status" class="small text-muted mt-3 mb-0" role="status">Starting camera…</p></div></div></div></div>
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
-    const cart = [];
-    const cartItems = document.querySelector('#cart-items');
-    const cartData = document.querySelector('#cart-data');
-    const cartTotal = document.querySelector('#cart-total');
-    const cartSubtotal = document.querySelector('#cart-subtotal');
-    const checkoutButton = document.querySelector('#checkout-button');
-    const quotationButton = document.querySelector('#quotation-button');
-    const discountInput = document.querySelector('#discount');
-    const priceType = document.querySelector('#price-type');
+    const currency = "KSh";
+    const cart = []; const cartItems = document.querySelector('#cart-items'); const cartData = document.querySelector('#cart-data'); const cartTotal = document.querySelector('#cart-total'); const cartSubtotal = document.querySelector('#cart-subtotal'); const checkoutButton = document.querySelector('#checkout-button'); const quotationButton = document.querySelector('#quotation-button'); const discountInput = document.querySelector('#discount'); const priceType = document.querySelector('#price-type');
     const priceFor = (item) => priceType.value === 'wholesale' ? item.wholesalePrice : item.retailPrice;
-    function updateProductPrices() {
-        document.querySelectorAll('.add-product').forEach((button) => {
-            const price = priceType.value === 'wholesale' ? button.dataset.wholesalePrice : button.dataset.retailPrice;
-            button.closest('.card-body').querySelector('.display-price').textContent = Number(price).toFixed(2);
-        });
-    }
-
-    function renderCart() {
-        if (!cart.length) { cartItems.innerHTML = '<p class="text-muted text-center my-4"><i class="fa-solid fa-basket-shopping d-block fs-3 mb-2"></i>Your cart is empty.</p>'; cartData.value = '[]'; cartTotal.textContent = '0.00'; cartSubtotal.textContent = '0.00'; checkoutButton.disabled = true; quotationButton.disabled = true; return; }
-        let total = 0;
-        cartItems.innerHTML = cart.map((item) => { const lineTotal = priceFor(item) * item.quantity; total += lineTotal; return `<div class="border-bottom py-2"><div class="d-flex justify-content-between gap-2"><strong>${item.name}</strong><button type="button" class="btn btn-sm btn-outline-danger remove-item" data-id="${item.id}" aria-label="Remove ${item.name}"><i class="fa-solid fa-trash"></i></button></div><div class="d-flex align-items-center justify-content-between mt-2"><div class="btn-group btn-group-sm"><button type="button" class="btn btn-outline-secondary change-quantity" data-id="${item.id}" data-change="-1"><i class="fa-solid fa-minus"></i></button><span class="btn btn-outline-secondary disabled">${item.quantity}</span><button type="button" class="btn btn-outline-secondary change-quantity" data-id="${item.id}" data-change="1"><i class="fa-solid fa-plus"></i></button></div><span>KSh ${lineTotal.toFixed(2)}</span></div></div>`; }).join('');
-        cartData.value = JSON.stringify(cart.map((item) => ({ product_id: item.id, quantity: item.quantity })));
-        const discount = Math.max(0, Number(discountInput.value) || 0);
-        cartSubtotal.textContent = total.toFixed(2); cartTotal.textContent = Math.max(0, total - discount).toFixed(2); checkoutButton.disabled = false; quotationButton.disabled = false;
-    }
-    document.querySelectorAll('.add-product').forEach((button) => button.addEventListener('click', () => { const id = Number(button.dataset.id); const existing = cart.find((item) => item.id === id); if (existing) { if (existing.isService || existing.quantity < existing.stock) existing.quantity += 1; } else { cart.push({ id, name: button.dataset.name, retailPrice: Number(button.dataset.retailPrice), wholesalePrice: Number(button.dataset.wholesalePrice), stock: Number(button.dataset.stock), isService: button.dataset.isService === 'true', quantity: 1 }); } renderCart(); }));
+    function updateProductPrices() { document.querySelectorAll('.add-product').forEach((button) => { const price = priceType.value === 'wholesale' ? button.dataset.wholesalePrice : button.dataset.retailPrice; button.closest('.card-body').querySelector('.display-price').textContent = Number(price).toFixed(2); }); }
+    function renderCart() { if (!cart.length) { cartItems.innerHTML = '<p class="text-muted text-center my-4"><i class="fas fa-basket-shopping d-block fs-3 mb-2"></i>Your cart is empty.</p>'; cartData.value = '[]'; cartTotal.textContent = '0.00'; cartSubtotal.textContent = '0.00'; checkoutButton.disabled = true; quotationButton.disabled = true; return; } let total = 0; cartItems.innerHTML = cart.map((item) => { const lineTotal = priceFor(item) * item.quantity; total += lineTotal; return `<div class="border-bottom py-2"><div class="d-flex justify-content-between gap-2"><strong>${item.name}</strong><button type="button" class="btn btn-sm btn-outline-danger remove-item" data-id="${item.id}" aria-label="Remove ${item.name}"><i class="fas fa-trash"></i></button></div><div class="d-flex align-items-center justify-content-between mt-2"><div class="btn-group btn-group-sm"><button type="button" class="btn btn-outline-secondary change-quantity" data-id="${item.id}" data-change="-1"><i class="fas fa-minus"></i></button><span class="btn btn-outline-secondary disabled">${item.quantity}</span><button type="button" class="btn btn-outline-secondary change-quantity" data-id="${item.id}" data-change="1"><i class="fas fa-plus"></i></button></div><span>${currency} ${lineTotal.toFixed(2)}</span></div></div>`; }).join(''); cartData.value = JSON.stringify(cart.map((item) => ({ product_id: item.id, quantity: item.quantity }))); const discount = Math.max(0, Number(discountInput.value) || 0); cartSubtotal.textContent = total.toFixed(2); cartTotal.textContent = Math.max(0, total - discount).toFixed(2); checkoutButton.disabled = false; quotationButton.disabled = false; }
+    function addProductFromButton(button) { const id = Number(button.dataset.id); const existing = cart.find((item) => item.id === id); if (existing) { if (existing.isService || existing.quantity < existing.stock) existing.quantity += 1; } else { cart.push({ id, name: button.dataset.name, retailPrice: Number(button.dataset.retailPrice), wholesalePrice: Number(button.dataset.wholesalePrice), stock: Number(button.dataset.stock), isService: button.dataset.isService === 'true', quantity: 1 }); } renderCart(); }
+    document.querySelectorAll('.add-product').forEach((button) => button.addEventListener('click', () => addProductFromButton(button)));
     cartItems.addEventListener('click', (event) => { const id = Number(event.target.closest('button')?.dataset.id); const item = cart.find((cartItem) => cartItem.id === id); if (!item) return; if (event.target.closest('.remove-item')) cart.splice(cart.indexOf(item), 1); if (event.target.closest('.change-quantity')) { item.quantity += Number(event.target.closest('button').dataset.change); if (item.quantity <= 0) cart.splice(cart.indexOf(item), 1); else if (!item.isService && item.quantity > item.stock) item.quantity = item.stock; } renderCart(); });
-    priceType.addEventListener('change', () => { updateProductPrices(); renderCart(); });
-    discountInput.addEventListener('input', renderCart);
-    updateProductPrices();
+    priceType.addEventListener('change', () => { updateProductPrices(); renderCart(); }); discountInput.addEventListener('input', renderCart);
+    const categoryCards = document.querySelectorAll('.category-card'); const productCards = document.querySelectorAll('.product-card'); const emptyCategoryMessage = document.querySelector('#no-category-products'); const productGridTitle = document.querySelector('#product-grid-title'); const productCount = document.querySelector('#product-count');
+    function filterCategory(card) { const category = card.dataset.category; let visible = 0; productCards.forEach((productCard) => { const matches = category === 'all' || productCard.dataset.category === category; productCard.classList.toggle('d-none', !matches); if (matches) visible += 1; }); categoryCards.forEach((item) => item.classList.toggle('active', item === card)); productGridTitle.textContent = card.querySelector('.category-card-title').textContent; productCount.textContent = `${visible} available`; emptyCategoryMessage.classList.toggle('d-none', visible > 0); }
+    categoryCards.forEach((card) => card.addEventListener('click', () => filterCategory(card))); filterCategory(document.querySelector('.category-card.active'));
+    const scannerModal = document.querySelector('#barcodeScannerModal'); const scannerStatus = document.querySelector('#scanner-status'); const scanFeedback = document.querySelector('#scan-feedback'); let barcodeScanner; let scannerRunning = false; let scanHandled = false;
+    const stopScanner = () => { if (!barcodeScanner || !scannerRunning) return Promise.resolve(); scannerRunning = false; return barcodeScanner.stop().catch(() => {}); };
+    const showScanFeedback = (message, type) => { scanFeedback.className = `alert alert-${type} mt-3 mb-0`; scanFeedback.textContent = message; };
+    const startScanner = () => { if (!window.Html5Qrcode) { scannerStatus.textContent = 'The barcode scanner library could not be loaded. Check your internet connection.'; return; } scanHandled = false; scannerStatus.textContent = 'Allow camera access to begin scanning.'; barcodeScanner = barcodeScanner || new Html5Qrcode('barcode-reader'); barcodeScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 150 } }, (decodedText) => { if (scanHandled) return; const productButton = Array.from(document.querySelectorAll('.add-product')).find((button) => button.dataset.sku.trim() === decodedText.trim()); if (!productButton) { scannerStatus.textContent = `No available product has SKU “${decodedText}”.`; return; } scanHandled = true; addProductFromButton(productButton); showScanFeedback(`${productButton.dataset.name} was added to the cart.`, 'success'); scannerStatus.textContent = `${productButton.dataset.name} added to cart.`; stopScanner().finally(() => bootstrap.Modal.getInstance(scannerModal).hide()); }, () => {}).then(() => { scannerRunning = true; scannerStatus.textContent = 'Camera is ready. Hold a barcode in the frame.'; }).catch(() => { scannerStatus.textContent = 'Camera access failed. Use HTTPS, allow camera access, then try again.'; }); };
+    scannerModal.addEventListener('shown.bs.modal', startScanner); scannerModal.addEventListener('hidden.bs.modal', () => { stopScanner(); }); updateProductPrices();
 </script>
 {% endblock %}

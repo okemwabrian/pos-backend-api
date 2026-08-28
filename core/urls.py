@@ -24,7 +24,10 @@ urlpatterns = [
     path('', include('users.urls')),
     path('settings/', views.settings_view, name='settings'),
     path('reports/', views.reports_view, name='reports'),
+    path('reports/products/<int:product_id>/', views.product_report_view, name='product_report'),
+    path('reports/customers/<int:customer_id>/', views.customer_report_view, name='customer_report'),
     path('reports/<str:report_type>/export/', views.reports_csv_view, name='reports_csv'),
+    path('reports/<str:report_type>/download/<str:export_format>/', views.reports_download_view, name='reports_download'),
     # Connect the inventory API endpoints
     path('api/inventory/', include('inventory.api_urls')),
     path('inventory/', include('inventory.urls')),

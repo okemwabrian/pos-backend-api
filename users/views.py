@@ -15,12 +15,34 @@ __all__ = ["dashboard_view"]
 @user_passes_test(is_admin)
 @require_http_methods(["GET", "POST"])
 def user_management_view(request):
+    if request.method == "POST" and request.POST.get("action") == "update_role":
+        staff_user = get_object_or_404(CustomUser, pk=request.POST.get("user_id"))
+        role = request.POST.get("role")
+        valid_roles = dict(CustomUser.ROLE_CHOICES)
+        if role not in valid_roles:
+            messages.error(request, "Choose a valid role.")
+        elif staff_user.is_superuser:
+            messages.error(request, "A Django superuser already has unrestricted access.")
+        else:
+            staff_user.role = role
+            staff_user.save(update_fields=["role"])
+            messages.success(request, f"Role updated for {staff_user.username}.")
+        return redirect("users:manage")
+
     form = StaffUserForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "User created.")
         return redirect("users:manage")
-    return render(request, "users/manage.html", {"form": form, "users": CustomUser.objects.order_by("username")})
+    return render(
+        request,
+        "users/manage.html",
+        {
+            "form": form,
+            "users": CustomUser.objects.order_by("username"),
+            "role_choices": CustomUser.ROLE_CHOICES,
+        },
+    )
 
 
 @login_required
