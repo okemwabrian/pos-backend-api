@@ -22,10 +22,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-#(s5q+x10#ka88lnq0n@thr#=^h2g+wlxk)q4q3)quilnp5hpx'
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# Change this from True to False for security (optional but recommended later)
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Add the wildcards to allow PythonAnywhere to host it
+ALLOWED_HOSTS = ['*', '.pythonanywhere.com']
 
 
 # Application definition
