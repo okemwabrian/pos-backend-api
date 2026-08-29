@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
 from core.permissions import is_admin
-from .forms import StaffPasswordForm, StaffUserForm
+from .forms import PublicRegistrationForm, StaffPasswordForm, StaffUserForm
 from .models import CustomUser
 
 __all__ = ["dashboard_view"]
@@ -29,6 +29,19 @@ def user_management_view(request):
             messages.success(request, f"Role updated for {staff_user.username}.")
         return redirect("users:manage")
 
+    if request.method == "POST" and request.POST.get("action") == "toggle_active":
+        staff_user = get_object_or_404(CustomUser, pk=request.POST.get("user_id"))
+        if staff_user == request.user:
+            messages.error(request, "You cannot disable your own account.")
+        elif staff_user.is_superuser:
+            messages.error(request, "Superuser accounts cannot be disabled here.")
+        else:
+            staff_user.is_active = not staff_user.is_active
+            staff_user.save(update_fields=["is_active"])
+            state = "enabled" if staff_user.is_active else "disabled"
+            messages.success(request, f"{staff_user.username} has been {state}.")
+        return redirect("users:manage")
+
     form = StaffUserForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -43,6 +56,19 @@ def user_management_view(request):
             "role_choices": CustomUser.ROLE_CHOICES,
         },
     )
+
+
+@require_http_methods(["GET", "POST"])
+def register_view(request):
+    if request.user.is_authenticated:
+        return redirect("users:dashboard")
+
+    form = PublicRegistrationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Account created. You can now sign in.")
+        return redirect("login")
+    return render(request, "registration/register.html", {"form": form})
 
 
 @login_required
