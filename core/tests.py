@@ -30,8 +30,11 @@ class ZReportTests(TestCase):
             cashier=self.user,
             customer_name="Report Customer",
             payment_method="till_number",
-            till_number="123456",
-            total_amount=Decimal("120.00"),
+            till_number="5453103",
+            subtotal_amount=Decimal("120.00"),
+            vat_rate=Decimal("16.00"),
+            vat_amount=Decimal("19.20"),
+            total_amount=Decimal("139.20"),
         )
         InvoiceItem.objects.create(
             invoice=self.invoice,
@@ -56,6 +59,7 @@ class ZReportTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["z_revenue"], Decimal("120.00"))
+        self.assertEqual(response.context["z_vat_collected"], Decimal("19.20"))
         self.assertEqual(response.context["z_cost_of_goods"], Decimal("80.00"))
         self.assertEqual(response.context["z_expenses"], Decimal("10.00"))
         self.assertEqual(response.context["z_profit"], Decimal("30.00"))
@@ -65,7 +69,7 @@ class ZReportTests(TestCase):
             for row in response.context["z_payment_breakdown"]
             if row["key"] == "till_number"
         )
-        self.assertEqual(till_total, Decimal("120.00"))
+        self.assertEqual(till_total, Decimal("139.20"))
 
     def test_z_report_marks_legacy_costs_as_incomplete(self):
         InvoiceItem.objects.filter(invoice=self.invoice).update(cost_at_sale=None)

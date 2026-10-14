@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from crm.models import Customer
 from inventory.models import Product
+from core.store import TILL_NUMBER, VAT_RATE
 
 class Invoice(models.Model):
     PAYMENT_CHOICES = (
@@ -30,6 +31,11 @@ class Invoice(models.Model):
     change_amount = models.DecimalField(
         max_digits=10, decimal_places=2, default=0
     )
+    subtotal_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    vat_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, default=VAT_RATE
+    )
+    vat_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     comment = models.TextField(blank=True)
@@ -37,6 +43,9 @@ class Invoice(models.Model):
 
     def clean(self):
         super().clean()
+        if self.payment_method == "till_number":
+            self.till_number = TILL_NUMBER
+
         if self.payment_method == "cash":
             if self.amount_tendered is None:
                 raise ValidationError(
@@ -52,7 +61,6 @@ class Invoice(models.Model):
             self.change_amount = 0
 
         required_fields = {
-            'till_number': self.payment_method == 'till_number',
             'paybill_number': self.payment_method == 'paybill',
             'account_number': self.payment_method == 'paybill',
             'phone_number': self.payment_method == 'send_money',
@@ -64,6 +72,11 @@ class Invoice(models.Model):
         }
         if errors:
             raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        if self.payment_method == "till_number":
+            self.till_number = TILL_NUMBER
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Invoice #{self.id} - {self.total_amount}"

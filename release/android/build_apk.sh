@@ -39,5 +39,5 @@ cd "$ANDROID_DIR"
 ./gradlew assembleDebug
 
 mkdir -p "$PROJECT_DIR/release/android"
-cp app/build/outputs/apk/debug/app-debug.apk "$PROJECT_DIR/release/android/Chiwas-POS.apk"
-printf 'Debug APK created at %s\n' "$PROJECT_DIR/release/android/Chiwas-POS.apk"
+cp app/build/outputs/apk/debug/app-debug.apk "$PROJECT_DIR/release/android/Free-House-POS.apk"
+printf 'Debug APK created at %s\n' "$PROJECT_DIR/release/android/Free-House-POS.apk"

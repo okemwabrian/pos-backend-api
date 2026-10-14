@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Free House Bar &amp; Restaurant</title>
+  <rect width="512" height="512" rx="96" fill="#fff"/>
+  <circle cx="256" cy="220" r="154" fill="none" stroke="#000" stroke-width="13"/>
+  <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="14">
+    <path d="M226 103h60v35l20 27v119c0 17-13 30-30 30h-40c-17 0-30-13-30-30V165l20-27v-35Z"/>
+    <path d="M228 138h56m-77 48h98m-77 39h56m-36-122V82h36v21"/>
+    <path d="M318 160c0-24 19-43 43-43s43 19 43 43l-7 61c-3 29-27 51-56 51s-53-22-56-51l-7-61m-3 22h128m-64 90v37m-27 14h54"/>
+  </g>
+  <text x="256" y="420" fill="#000" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="700" letter-spacing="2" text-anchor="middle">FREE HOUSE</text>
+</svg>

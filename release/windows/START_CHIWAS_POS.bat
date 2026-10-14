@@ -1,4 +1,4 @@
 @echo off
 setlocal
-title CHIWAS LIQUOR STORE POS
+title FREE HOUSE BAR & RESTAURANT POS
 call "%~dp0Start_Chiwas_POS_Windows.bat"

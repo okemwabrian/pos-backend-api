@@ -31,6 +31,12 @@ def _period_bounds(period):
     return today, today, "Today"
 
 
+def _net_revenue(invoices):
+    return invoices.aggregate(
+        total=Sum(F("subtotal_amount") - F("discount_amount"))
+    )["total"] or 0
+
+
 def _sales_activity(invoices, quotations, limit=50):
     activity = [
         {
@@ -139,9 +145,15 @@ def report_preview_data(report_type):
             )
         ]
         return "Sales & Quotations Preview", headers, rows
-    revenue = Invoice.objects.aggregate(total=Sum("total_amount"))["total"] or 0
+    revenue = _net_revenue(Invoice.objects.all())
+    vat_collected = Invoice.objects.aggregate(total=Sum("vat_amount"))["total"] or 0
     expenses = Expense.objects.aggregate(total=Sum("amount"))["total"] or 0
-    return "Profit Preview", ["Metric", "Amount"], [["Revenue", revenue], ["Expenses", expenses], ["Profit", revenue - expenses]]
+    return "Profit Preview", ["Metric", "Amount"], [
+        ["Sales before VAT", revenue],
+        ["VAT collected", vat_collected],
+        ["Expenses", expenses],
+        ["Profit", revenue - expenses],
+    ]
 
 
 @require_http_methods(["GET", "POST"])
@@ -169,7 +181,8 @@ def dashboard_view(request):
     start_date, end_date, period_label = _period_bounds(period)
     invoices = Invoice.objects.filter(created_at__date__range=(start_date, end_date))
     quotations = Quotation.objects.filter(created_at__date__range=(start_date, end_date))
-    total_revenue = invoices.aggregate(total=Sum("total_amount"))["total"] or 0
+    total_revenue = _net_revenue(invoices)
+    vat_collected = invoices.aggregate(total=Sum("vat_amount"))["total"] or 0
     total_expenses = Expense.objects.filter(date__range=(start_date, end_date)).aggregate(total=Sum("amount"))["total"] or 0
     calendar_context = _activity_calendar(request.GET.get("month"))
 
@@ -179,6 +192,7 @@ def dashboard_view(request):
         {
             "expense_form": expense_form,
             "revenue": total_revenue,
+            "vat_collected": vat_collected,
             "expenses": total_expenses,
             "profit": total_revenue - total_expenses,
             "chart_revenue": float(total_revenue),
@@ -216,7 +230,7 @@ def settings_view(request):
 @user_passes_test(is_admin_or_manager)
 def reports_view(request):
     invoices = Invoice.objects.select_related("cashier", "customer").order_by("-created_at")
-    revenue = invoices.aggregate(total=Sum("total_amount"))["total"] or 0
+    revenue = _net_revenue(invoices)
     expenses = Expense.objects.aggregate(total=Sum("amount"))["total"] or 0
     low_stock = Product.objects.filter(is_service=False, stock_quantity__lte=F("low_stock_threshold")).order_by("stock_quantity")
     preview_type = request.GET.get("preview", "sales")
@@ -237,7 +251,8 @@ def reports_view(request):
     z_invoices = Invoice.objects.filter(
         created_at__date__range=(report_start, report_end)
     )
-    z_revenue = z_invoices.aggregate(total=Sum("total_amount"))["total"] or 0
+    z_revenue = _net_revenue(z_invoices)
+    z_vat_collected = z_invoices.aggregate(total=Sum("vat_amount"))["total"] or 0
     z_cost_of_goods = (
         InvoiceItem.objects.filter(invoice__in=z_invoices).aggregate(
             total=Sum(F("cost_at_sale") * F("quantity"))
@@ -280,6 +295,7 @@ def reports_view(request):
             "z_start_date": report_start,
             "z_end_date": report_end,
             "z_revenue": z_revenue,
+            "z_vat_collected": z_vat_collected,
             "z_cost_of_goods": z_cost_of_goods,
             "z_cost_data_complete": z_cost_data_complete,
             "z_expenses": z_expenses,
@@ -343,10 +359,11 @@ def reports_csv_view(request, report_type):
         for invoice in Invoice.objects.select_related("cashier", "customer").order_by("-created_at"):
             writer.writerow([invoice.pk, invoice.created_at, invoice.cashier.username, invoice.customer or "Walk-in", invoice.total_amount])
     else:
-        revenue = Invoice.objects.aggregate(total=Sum("total_amount"))["total"] or 0
+        revenue = _net_revenue(Invoice.objects.all())
+        vat_collected = Invoice.objects.aggregate(total=Sum("vat_amount"))["total"] or 0
         expenses = Expense.objects.aggregate(total=Sum("amount"))["total"] or 0
-        writer.writerow(["Revenue", "Expenses", "Profit"])
-        writer.writerow([revenue, expenses, revenue - expenses])
+        writer.writerow(["Sales before VAT", "VAT collected", "Expenses", "Profit"])
+        writer.writerow([revenue, vat_collected, expenses, revenue - expenses])
     return response
 
 

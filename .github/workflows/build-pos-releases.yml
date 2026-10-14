@@ -1,4 +1,4 @@
-name: Build CHIWAS POS releases
+name: Build FREE HOUSE POS releases
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: chiwas-pos-release-${{ github.ref }}
+  group: free-house-pos-release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -63,27 +63,27 @@ jobs:
         run: |
           mkdir -p release/dist
           cp mobile/android/app/build/outputs/apk/debug/app-debug.apk \
-            release/dist/Chiwas-Liquor-POS.apk
+            release/dist/Free-House-POS.apk
 
       - name: Upload downloadable build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: chiwas-pos-downloads
+          name: free-house-pos-downloads
           if-no-files-found: error
           retention-days: 30
           path: |
-            release/dist/Chiwas-Liquor-POS.apk
-            release/dist/Chiwas-POS-Windows-7-8-10-11.zip
-            release/dist/Chiwas-POS-Ubuntu.zip
+            release/dist/Free-House-POS.apk
+            release/dist/Free-House-POS-Windows-7-8-10-11.zip
+            release/dist/Free-House-POS-Ubuntu.zip
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}-${{ github.run_attempt }}
-          name: CHIWAS POS build ${{ github.run_number }}
+          name: FREE HOUSE POS build ${{ github.run_number }}
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           files: |
-            release/dist/Chiwas-Liquor-POS.apk
-            release/dist/Chiwas-POS-Windows-7-8-10-11.zip
-            release/dist/Chiwas-POS-Ubuntu.zip
+            release/dist/Free-House-POS.apk
+            release/dist/Free-House-POS-Windows-7-8-10-11.zip
+            release/dist/Free-House-POS-Ubuntu.zip

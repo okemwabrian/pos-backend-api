@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>First-time setup | {{ shop_name }}</title>
-    <link rel="icon" type="image/svg+xml" href="{% static 'images/chiwas-logo.svg' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/free-house-app-icon.svg' %}">
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
     <style>
         body { min-height: 100vh; background: #edf2eb; }
@@ -17,7 +17,7 @@
     <main class="container">
         <section class="setup-card card shadow mx-auto">
             <div class="card-body p-4 p-md-5">
-                <img class="setup-logo" src="{% static 'images/chiwas-logo.svg' %}" alt="CHIWAS LIQUOR STORE &amp; RESTAURANT">
+                <img class="setup-logo" src="{% static 'images/free-house-logo.svg' %}" alt="FREE HOUSE BAR &amp; RESTAURANT">
                 <h1 class="h3 text-center">First-time administrator setup</h1>
                 <p class="text-center text-muted">Create the owner account for {{ shop_name }}. This setup is disabled after the first account is created.</p>
                 {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}{% endif %}

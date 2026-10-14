@@ -1,9 +1,9 @@
 @echo off
 setlocal
-title CHIWAS POS Setup
+title FREE HOUSE POS Setup
 
 if not exist "%~dp0portable-pos\index.html" (
-    echo CHIWAS POS files were not found.
+    echo FREE HOUSE POS files were not found.
     echo Extract the complete ZIP file first, then run this setup again.
     pause
     exit /b 1
@@ -16,7 +16,7 @@ if not defined LOCALAPPDATA (
     exit /b 1
 )
 
-echo Installing CHIWAS POS for your Windows account...
+echo Installing FREE HOUSE BAR ^& RESTAURANT POS for your Windows account...
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 if errorlevel 1 (
     echo Could not create the install folder:
@@ -44,7 +44,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$desktop=[Environment]::GetFolderPath('Desktop'); $shell=New-Object -ComObject WScript.Shell; $shortcut=$shell.CreateShortcut((Join-Path $desktop 'CHIWAS POS.lnk')); $shortcut.TargetPath=Join-Path $env:INSTALL_DIR 'Start_Chiwas_POS_Windows.bat'; $shortcut.WorkingDirectory=$env:INSTALL_DIR; $shortcut.Description='CHIWAS LIQUOR STORE & RESTAURANT POS'; $shortcut.Save()"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$desktop=[Environment]::GetFolderPath('Desktop'); $shell=New-Object -ComObject WScript.Shell; $shortcut=$shell.CreateShortcut((Join-Path $desktop 'FREE HOUSE POS.lnk')); $shortcut.TargetPath=Join-Path $env:INSTALL_DIR 'Start_Chiwas_POS_Windows.bat'; $shortcut.WorkingDirectory=$env:INSTALL_DIR; $shortcut.Description='FREE HOUSE BAR & RESTAURANT POS'; $shortcut.Save()"
 if errorlevel 1 (
     echo App files are installed, but Windows could not create the desktop shortcut.
     echo You can still launch it from:
@@ -54,7 +54,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo Setup complete. A CHIWAS POS shortcut is on your Desktop.
+echo Setup complete. A FREE HOUSE POS shortcut is on your Desktop.
 echo Starting the POS now. Close its server window to stop the local app.
 set "INSTALL_DIR=%INSTALL_DIR%"
 start "" "%INSTALL_DIR%\Start_Chiwas_POS_Windows.bat"

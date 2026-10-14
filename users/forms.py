@@ -27,7 +27,7 @@ class FirstAdminSetupForm(UserCreationForm):
 class ShopSettingsForm(forms.ModelForm):
     class Meta:
         model = ShopSettings
-        fields = ["shop_name", "phone", "email", "address", "low_stock_alerts"]
+        fields = ["phone", "email", "address", "low_stock_alerts"]
         widgets = {"address": forms.Textarea(attrs={"rows": 3})}
 
 

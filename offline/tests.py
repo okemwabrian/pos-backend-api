@@ -78,9 +78,41 @@ class OfflineSyncApiTests(APITestCase):
 
         self.assertEqual(first.data["results"][0]["status"], "synced")
         self.assertTrue(duplicate.data["results"][0]["already_synced"])
-        self.assertEqual(Invoice.objects.count(), 1)
+        invoice = Invoice.objects.get()
+        self.assertEqual(invoice.subtotal_amount, Decimal("200.00"))
+        self.assertEqual(invoice.vat_amount, Decimal("32.00"))
+        self.assertEqual(invoice.total_amount, Decimal("232.00"))
         self.product.refresh_from_db()
         self.assertEqual(self.product.stock_quantity, 8)
+
+    def test_till_sync_uses_the_fixed_store_till_and_applies_vat(self):
+        self.authenticate_as(self.cashier)
+        response = self.client.post(
+            reverse("offline:sync"),
+            {
+                "operations": [
+                    {
+                        "id": str(uuid.uuid4()),
+                        "type": "sale",
+                        "data": {
+                            "items": [{"product_id": self.product.pk, "quantity": 1}],
+                            "payment_method": "till_number",
+                            "till_number": "9999999",
+                            "customer_name": "Mobile Customer",
+                            "price_type": "retail",
+                            "discount": "0",
+                        },
+                    }
+                ]
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.data["results"][0]["status"], "synced")
+        invoice = Invoice.objects.get()
+        self.assertEqual(invoice.till_number, "5453103")
+        self.assertEqual(invoice.vat_amount, Decimal("16.00"))
+        self.assertEqual(invoice.total_amount, Decimal("116.00"))
 
     def test_invalid_sale_details_do_not_deduct_stock(self):
         self.authenticate_as(self.cashier)

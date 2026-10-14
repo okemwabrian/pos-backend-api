@@ -2,7 +2,7 @@ import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { Network } from "@capacitor/network";
 import { SecureStorage } from "@aparajita/capacitor-secure-storage";
-import logoPath from "../../static/images/chiwas-logo.svg";
+import logoPath from "../../static/images/free-house-logo.svg";
 import {
   getOperations,
   getLocalCategories,
@@ -67,6 +67,9 @@ const DEFAULT_CATEGORIES = [
   "Soft Drinks/Mixers",
   "Food/Kitchen",
 ];
+const STORE_NAME = "FREE HOUSE BAR & RESTAURANT";
+const TILL_NUMBER = "5453103";
+const VAT_RATE = 16;
 
 function isOnline() {
   return networkConnected;
@@ -206,6 +209,11 @@ async function renderLocalReport() {
       (!endDate || localDateKey(operation.created_at) <= endDate),
   );
   const total = sales.reduce((sum, sale) => sum + Number(sale.total_amount), 0);
+  const revenue = sales.reduce(
+    (sum, sale) => sum + Number(sale.subtotal_amount ?? sale.total_amount) - Number(sale.discount_amount || 0),
+    0,
+  );
+  const vatCollected = sales.reduce((sum, sale) => sum + Number(sale.vat_amount || 0), 0);
   const units = sales.reduce(
     (sum, sale) => sum + sale.data.items.reduce((count, item) => count + item.quantity, 0),
     0,
@@ -227,8 +235,9 @@ async function renderLocalReport() {
     <tr><td>${escapeHtml(paymentLabel(method))}</td><td>KSh ${(totalsByPayment.get(method) || 0).toFixed(2)}</td></tr>
   `).join("");
   $("#local-report").innerHTML = `
-    <p><strong>${sales.length}</strong> sales · <strong>${units}</strong> units · Revenue <strong>KSh ${total.toFixed(2)}</strong></p>
-    <p>Cost of goods: KSh ${costOfGoods.toFixed(2)} · ${costKnown ? "Profit" : "Known-cost profit"}: KSh ${(total - costOfGoods).toFixed(2)}</p>
+    <p><strong>${sales.length}</strong> sales · <strong>${units}</strong> units · Collected <strong>KSh ${total.toFixed(2)}</strong></p>
+    <p>Sales before VAT: KSh ${revenue.toFixed(2)} · VAT collected: KSh ${vatCollected.toFixed(2)}</p>
+    <p>Cost of goods: KSh ${costOfGoods.toFixed(2)} · ${costKnown ? "Profit" : "Known-cost profit"}: KSh ${(revenue - costOfGoods).toFixed(2)}</p>
     ${costKnown ? "" : '<p class="queue-error">Some older local sales do not have cost snapshots; profit is incomplete.</p>'}
     <div class="table-responsive"><table><thead><tr><th>Payment method</th><th>Total</th></tr></thead><tbody>
       ${paymentRows || '<tr><td colspan="2">No sales in this date range.</td></tr>'}
@@ -546,7 +555,11 @@ function renderCart() {
     0,
   );
   const discount = Math.max(0, Number($("#discount").value) || 0);
-  $("#sale-total").textContent = Math.max(0, subtotal - discount).toFixed(2);
+  const taxableAmount = Math.max(0, subtotal - discount);
+  const vatAmount = Math.round((taxableAmount * VAT_RATE / 100 + Number.EPSILON) * 100) / 100;
+  $("#sale-subtotal").textContent = subtotal.toFixed(2);
+  $("#sale-vat").textContent = vatAmount.toFixed(2);
+  $("#sale-total").textContent = (taxableAmount + vatAmount).toFixed(2);
   updateCashChange();
   updateCartCount();
 }
@@ -557,7 +570,6 @@ function renderPaymentFields() {
       ["amount_tendered", "Amount Tendered (KSh)", true, "number"],
     ],
     till_number: [
-      ["till_number", "Till Number", true, "text"],
       ["transaction_code", "M-Pesa Ref (optional)", false, "text"],
       ["payer_name", "Payer Name (optional)", false, "text"],
     ],
@@ -575,6 +587,12 @@ function renderPaymentFields() {
     <label for="payment-${name}">${label}</label>
     <input id="payment-${name}" name="${name}" type="${type}" ${type === "number" ? 'min="0" step="0.01"' : ""} ${required ? "required" : ""} />`
   ).join("");
+  if (paymentMethod.value === "till_number") {
+    paymentFields.insertAdjacentHTML(
+      "afterbegin",
+      `<p class="muted small">Fixed Till Number: <strong>${TILL_NUMBER}</strong></p>`,
+    );
+  }
   if (paymentMethod.value === "cash") {
     paymentFields.insertAdjacentHTML(
       "beforeend",
@@ -1150,7 +1168,7 @@ function makeReceipt(operation, cashier) {
     `<tr><td>${escapeHtml(item.name)}<br>${item.quantity} × KSh ${item.unit_price.toFixed(2)}</td><td>KSh ${item.line_total.toFixed(2)}</td></tr>`
   )).join("");
   const paymentDetails = {
-    till_number: `Till: ${escapeHtml(operation.data.till_number)}${operation.data.transaction_code ? ` | M-Pesa Ref: ${escapeHtml(operation.data.transaction_code)}` : ""}${operation.data.payer_name ? ` | Payer: ${escapeHtml(operation.data.payer_name)}` : ""}`,
+    till_number: `Till No: ${TILL_NUMBER}${operation.data.transaction_code ? ` | Ref: ${escapeHtml(operation.data.transaction_code)}` : ""}${operation.data.payer_name ? ` | Payer: ${escapeHtml(operation.data.payer_name)}` : ""}`,
     paybill: `Paybill No: ${escapeHtml(operation.data.paybill_number)} | Acc No: ${escapeHtml(operation.data.account_number)}`,
     send_money: `Phone: ${escapeHtml(operation.data.phone_number)}${operation.data.transaction_code ? ` | M-Pesa Ref: ${escapeHtml(operation.data.transaction_code)}` : ""}`,
   }[operation.data.payment_method] || "";
@@ -1159,15 +1177,18 @@ function makeReceipt(operation, cashier) {
     ? "SALE RECORDED ON THIS DEVICE"
     : "SALE PENDING SYNC";
   receiptPanel.innerHTML = `
-    <img class="receipt-logo" src="${logoPath}" alt="CHIWAS LIQUOR STORE &amp; RESTAURANT">
-    <p>OPPOSITE QUICKMART</p>
+    <img class="receipt-logo" src="${logoPath}" alt="${STORE_NAME}">
+    <p>${STORE_NAME}<br>Till No: ${TILL_NUMBER}</p>
     <p data-receipt-operation="${operation.id}">${saleRecordStatus}<br>Reference ${operation.id}</p>
     <hr>
     <table>${items}</table>
     <hr>
     <p>Customer: ${escapeHtml(operation.data.customer_name || customers.find(customer => customer.id === Number(operation.data.customer_id))?.name || "Walk-in Customer")}</p>
     <p>Payment Mode: ${escapeHtml(operation.data.payment_method.replaceAll("_", " ").toUpperCase())}<br>${paymentDetails}</p>
-    <p>Total: KSh ${Number(operation.total_amount).toFixed(2)}</p>
+    <p>Subtotal: KSh ${Number(operation.subtotal_amount).toFixed(2)}<br>
+      ${Number(operation.discount_amount) ? `Discount: - KSh ${Number(operation.discount_amount).toFixed(2)}<br>` : ""}
+      VAT (${Number(operation.vat_rate).toFixed(0)}%): KSh ${Number(operation.vat_amount).toFixed(2)}<br>
+      <strong>Total: KSh ${Number(operation.total_amount).toFixed(2)}</strong></p>
     ${operation.data.payment_method === "cash" ? `<p>Tendered: KSh ${Number(operation.data.amount_tendered).toFixed(2)}<br>Change: KSh ${(Number(operation.data.amount_tendered) - Number(operation.total_amount)).toFixed(2)}</p>` : ""}
     <hr>
     <p>Cashier: ${escapeHtml(cashier)}<br>${new Date(operation.created_at).toLocaleString()}<br>Thank you for your business!</p>
@@ -1406,7 +1427,9 @@ saleForm.addEventListener("submit", async (event) => {
     showMessage(appMessage, "Discount must be between zero and the sale subtotal.", true);
     return;
   }
-  const totalAmount = Math.max(0, subtotal - discount);
+  const taxableAmount = Math.max(0, subtotal - discount);
+  const vatAmount = Math.round((taxableAmount * VAT_RATE / 100 + Number.EPSILON) * 100) / 100;
+  const totalAmount = taxableAmount + vatAmount;
   const customerName = $("#sale-customer-name").value.trim() ||
     customers.find((customer) => customer.id === Number(customerSelect.value))?.name || "";
   if (!customerName) {
@@ -1427,6 +1450,10 @@ saleForm.addEventListener("submit", async (event) => {
     status: session.mode === "standalone" ? "local" : "pending",
     owner_key: ownerKey(),
     created_at: new Date().toISOString(),
+    subtotal_amount: subtotal,
+    discount_amount: discount,
+    vat_rate: VAT_RATE,
+    vat_amount: vatAmount,
     total_amount: totalAmount,
     receipt_lines: [...cart.values()].map(({ product, quantity }) => {
       const unitPrice = selectedPrice(product);
@@ -1445,7 +1472,7 @@ saleForm.addEventListener("submit", async (event) => {
       price_type: $("#price-type").value,
       discount: String(discount),
       payment_method: paymentMethod.value,
-      till_number: paymentData.till_number || "",
+      till_number: paymentMethod.value === "till_number" ? TILL_NUMBER : "",
       transaction_code: paymentData.transaction_code || "",
       payer_name: paymentData.payer_name || "",
       paybill_number: paymentData.paybill_number || "",

@@ -19,10 +19,11 @@ from django.conf import settings
 from django.views.static import serve as serve_media
 from django.urls import path, include
 from django.views.generic import RedirectView
+from .store import STORE_NAME
 from . import views
 
-admin.site.site_header = "CHIWAS LIQUOR STORE"
-admin.site.site_title = "CHIWAS LIQUOR STORE"
+admin.site.site_header = STORE_NAME
+admin.site.site_title = STORE_NAME
 admin.site.index_title = "Store administration"
 
 urlpatterns = [
@@ -34,7 +35,7 @@ urlpatterns = [
     ),
     path(
         "favicon.ico",
-        RedirectView.as_view(url="/static/images/chiwas-logo.svg", permanent=True),
+        RedirectView.as_view(url="/static/images/free-house-app-icon.svg", permanent=True),
     ),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),

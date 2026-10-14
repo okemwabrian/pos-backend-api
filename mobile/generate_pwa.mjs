@@ -3,9 +3,12 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 
 const outputDirectory = new URL("./www/", import.meta.url);
-const logoSource = new URL("../static/images/chiwas-logo.svg", import.meta.url);
-const logoTarget = new URL("./www/chiwas-logo.svg", import.meta.url);
+const logoSource = new URL("../static/images/free-house-logo.svg", import.meta.url);
+const logoTarget = new URL("./www/free-house-logo.svg", import.meta.url);
 await writeFile(logoTarget, await readFile(logoSource));
+const iconSource = new URL("../static/images/free-house-app-icon.svg", import.meta.url);
+const iconTarget = new URL("./www/free-house-app-icon.svg", import.meta.url);
+await writeFile(iconTarget, await readFile(iconSource));
 
 async function listFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });

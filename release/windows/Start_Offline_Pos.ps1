@@ -38,10 +38,10 @@ try {
         $arguments = "--app=`"$url`" --user-data-dir=`"$profile`" --no-first-run"
         Start-Process -FilePath $chrome -ArgumentList $arguments
     } else {
-        Write-Host "Install a Chromium-based browser (Chrome 109 or newer) to use the POS."
+        Write-Host "Install a Chromium-based browser (Chrome 109 or newer) to use FREE HOUSE POS."
         Start-Process $url
     }
-    Write-Host "CHIWAS POS is running locally at $url. Close this window to stop it."
+    Write-Host "FREE HOUSE BAR & RESTAURANT POS is running locally at $url. Close this window to stop it."
     Write-Host "The app and its IndexedDB data stay on this computer; no Python is needed."
 
     while ($listener.Server.IsBound) {

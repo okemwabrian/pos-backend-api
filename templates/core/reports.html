@@ -2,7 +2,7 @@
 {% block title %}Reports | {{ shop_name }}{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4"><div><h1 class="h2 mb-1"><i class="fas fa-chart-column me-2 text-primary"></i>Reports</h1><p class="text-muted mb-0">Preview report data before exporting it.</p></div></div>
-<section class="row g-3 mb-4"><div class="col-md-4"><div class="app-card card text-bg-success"><div class="card-body"><small>Revenue</small><h2>KSh {{ revenue|floatformat:2 }}</h2></div></div></div><div class="col-md-4"><div class="app-card card text-bg-danger"><div class="card-body"><small>Expenses</small><h2>KSh {{ expenses|floatformat:2 }}</h2></div></div></div><div class="col-md-4"><div class="app-card card text-bg-primary"><div class="card-body"><small>Profit</small><h2>KSh {{ profit|floatformat:2 }}</h2></div></div></div></section>
+<section class="row g-3 mb-4"><div class="col-md-3"><div class="app-card card text-bg-success"><div class="card-body"><small>Sales before VAT</small><h2>KSh {{ revenue|floatformat:2 }}</h2></div></div></div><div class="col-md-3"><div class="app-card card text-bg-info"><div class="card-body"><small>VAT collected</small><h2>KSh {{ vat_collected|floatformat:2 }}</h2></div></div></div><div class="col-md-3"><div class="app-card card text-bg-danger"><div class="card-body"><small>Expenses</small><h2>KSh {{ expenses|floatformat:2 }}</h2></div></div></div><div class="col-md-3"><div class="app-card card text-bg-primary"><div class="card-body"><small>Profit</small><h2>KSh {{ profit|floatformat:2 }}</h2></div></div></div></section>
 <section class="app-card card mb-4"><div class="card-body">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
         <div><h2 class="h5 mb-1">End-of-Day / Z-Report</h2><p class="small text-muted mb-0">{{ z_invoice_count }} completed sales in the selected period.</p></div>
@@ -14,7 +14,8 @@
         </form>
     </div>
     <div class="row g-3 mb-3">
-        <div class="col-sm-6 col-lg-3"><div class="border rounded p-3"><small class="text-muted">Revenue</small><div class="h5 mb-0">KSh {{ z_revenue|floatformat:2 }}</div></div></div>
+        <div class="col-sm-6 col-lg-3"><div class="border rounded p-3"><small class="text-muted">Sales before VAT</small><div class="h5 mb-0">KSh {{ z_revenue|floatformat:2 }}</div></div></div>
+        <div class="col-sm-6 col-lg-3"><div class="border rounded p-3"><small class="text-muted">VAT collected</small><div class="h5 mb-0">KSh {{ z_vat_collected|floatformat:2 }}</div></div></div>
         <div class="col-sm-6 col-lg-3"><div class="border rounded p-3"><small class="text-muted">Cost of goods sold</small><div class="h5 mb-0">KSh {{ z_cost_of_goods|floatformat:2 }}</div></div></div>
         <div class="col-sm-6 col-lg-3"><div class="border rounded p-3"><small class="text-muted">Expenses</small><div class="h5 mb-0">KSh {{ z_expenses|floatformat:2 }}</div></div></div>
         <div class="col-sm-6 col-lg-3"><div class="border rounded p-3"><small class="text-muted">{% if z_cost_data_complete %}Profit{% else %}Profit (known costs){% endif %}</small><div class="h5 mb-0">KSh {{ z_profit|floatformat:2 }}</div>{% if not z_cost_data_complete %}<small class="text-warning">Some historical item costs are unavailable.</small>{% endif %}</div></div>

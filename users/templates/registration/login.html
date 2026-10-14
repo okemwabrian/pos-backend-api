@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sign in | {{ shop_name }}</title>
-    <link rel="icon" type="image/svg+xml" href="{% static 'images/chiwas-logo.svg' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/free-house-app-icon.svg' %}">
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
     <style>
@@ -18,7 +18,7 @@
     <main class="container">
         <section class="login-card card shadow-lg mx-auto">
             <div class="card-body p-4 p-md-5">
-                <img class="login-logo" src="{% static 'images/chiwas-logo.svg' %}" alt="CHIWAS LIQUOR STORE &amp; RESTAURANT">
+                <img class="login-logo" src="{% static 'images/free-house-logo.svg' %}" alt="FREE HOUSE BAR &amp; RESTAURANT">
                 <h1 class="h3 text-center mb-2">{{ shop_name }}</h1>
                 <p class="text-center text-muted mb-4">Staff sign-in portal</p>
                 {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}{% endif %}

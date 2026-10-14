@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}{{ shop_name }}{% endblock %}</title>
     {% load static %}
-    <link rel="icon" type="image/svg+xml" href="{% static 'images/chiwas-logo.svg' %}">
+    <link rel="icon" type="image/svg+xml" href="{% static 'images/free-house-app-icon.svg' %}">
     <link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
     <script src="{% static 'vendor/chart.js/chart.umd.min.js' %}"></script>
@@ -31,7 +31,7 @@
 <body>
     <div class="app-shell d-flex">
         <aside class="sidebar d-flex flex-column flex-shrink-0">
-            <a class="brand d-flex align-items-center gap-3 px-4 py-4 text-decoration-none" href="{% url 'users:dashboard' %}"><img class="brand-logo" src="{% static 'images/chiwas-logo.svg' %}" alt="CHIWAS LIQUOR STORE &amp; RESTAURANT"><span><span class="d-block">{{ shop_name }}</span><span class="brand-subtitle">Opposite Quickmart</span></span></a>
+            <a class="brand d-flex align-items-center gap-3 px-4 py-4 text-decoration-none" href="{% url 'users:dashboard' %}"><img class="brand-logo" src="{% static 'images/free-house-logo.svg' %}" alt="FREE HOUSE BAR &amp; RESTAURANT"><span><span class="d-block">{{ shop_name }}</span><span class="brand-subtitle">Till {{ store_till_number }} · VAT {{ vat_rate|floatformat:0 }}%</span></span></a>
             <nav class="pb-2">
                 <p class="nav-heading mb-0">Workspace</p>
                 <a class="sidebar-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'users:dashboard' %}"><i class="fas fa-gauge-high"></i>Dashboard</a>
@@ -52,7 +52,7 @@
             <div class="sidebar-bottom"><div class="profile-card"><div class="d-flex align-items-center gap-2"><span class="profile-avatar">{{ request.user.username|first|upper }}</span><div class="min-w-0 flex-grow-1"><div class="profile-name text-truncate">{{ request.user.get_full_name|default:request.user.username }}</div><div class="profile-role">{% if request.user.is_superuser %}System Administrator{% else %}{{ request.user.get_role_display }}{% endif %}</div></div><form method="post" action="{% url 'logout' %}" title="Log out">{% csrf_token %}<button class="profile-action" type="submit" aria-label="Log out"><i class="fas fa-right-from-bracket"></i></button></form></div></div></div>
         </aside>
         <main class="main-content flex-grow-1">
-            <header class="topbar d-flex align-items-center justify-content-between"><nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ dashboard_url }}"><i class="fas fa-house me-1"></i>{{ shop_name }}</a></li><li class="breadcrumb-item active" aria-current="page">{% block breadcrumb %}{{ current_page }}{% endblock %}</li></ol></nav><img class="topbar-logo" src="{% static 'images/chiwas-logo.svg' %}" alt="CHIWAS LIQUOR STORE &amp; RESTAURANT"><form class="search-box d-flex align-items-center px-3" action="{% url 'inventory:products' %}" method="get" role="search"><i class="fas fa-magnifying-glass text-muted"></i><input class="form-control" name="q" type="search" placeholder="Search inventory..." aria-label="Global search"><button class="btn btn-link btn-sm text-success text-decoration-none p-0" type="submit">Search</button></form></header>
+            <header class="topbar d-flex align-items-center justify-content-between"><nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{{ dashboard_url }}"><i class="fas fa-house me-1"></i>{{ shop_name }}</a></li><li class="breadcrumb-item active" aria-current="page">{% block breadcrumb %}{{ current_page }}{% endblock %}</li></ol></nav><img class="topbar-logo" src="{% static 'images/free-house-logo.svg' %}" alt="FREE HOUSE BAR &amp; RESTAURANT"><form class="search-box d-flex align-items-center px-3" action="{% url 'inventory:products' %}" method="get" role="search"><i class="fas fa-magnifying-glass text-muted"></i><input class="form-control" name="q" type="search" placeholder="Search inventory..." aria-label="Global search"><button class="btn btn-link btn-sm text-success text-decoration-none p-0" type="submit">Search</button></form></header>
             <div class="content-wrap">{% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}{% endif %}{% block content %}{% endblock %}</div>
         </main>
     </div>

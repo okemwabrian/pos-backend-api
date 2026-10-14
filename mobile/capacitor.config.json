@@ -1,6 +1,6 @@
 {
   "appId": "com.chiwasliquor.pos",
-  "appName": "CHIWAS LIQUOR STORE",
+  "appName": "Free House POS",
   "webDir": "www",
   "android": {
     "allowMixedContent": false

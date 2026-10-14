@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 from rest_framework import viewsets
 
+from core.store import TILL_NUMBER, VAT_RATE, calculate_vat
 from inventory.models import Category, Product
 from crm.models import Customer
 from .models import Invoice, InvoiceItem, Quotation, QuotationItem
@@ -57,7 +58,7 @@ def pos_terminal_view(request):
         payment_method = request.POST.get("payment_method", "").strip()
         action = request.POST.get("action", "invoice")
         payment_details = {
-            "till_number": request.POST.get("till_number", "").strip(),
+            "till_number": TILL_NUMBER if payment_method == "till_number" else "",
             "transaction_code": request.POST.get("transaction_code", "").strip(),
             "payer_name": request.POST.get("payer_name", "").strip(),
             "paybill_number": request.POST.get("paybill_number", "").strip(),
@@ -128,9 +129,12 @@ def pos_terminal_view(request):
         customer = Customer.objects.filter(pk=customer_id).first() if customer_id else None
         if action == "invoice" and not customer_name and not customer:
             raise ValueError("Enter the customer name for the receipt.")
-        total_amount = subtotal - discount
+        taxable_amount = subtotal - discount
+        vat_amount = calculate_vat(taxable_amount)
+        total_amount = taxable_amount + vat_amount
         if action == "quotation":
-            quotation = Quotation.objects.create(customer=customer, cashier=request.user, subtotal=subtotal, discount_amount=discount, total_amount=total_amount, comment=comment)
+            quotation_total = subtotal - discount
+            quotation = Quotation.objects.create(customer=customer, cashier=request.user, subtotal=subtotal, discount_amount=discount, total_amount=quotation_total, comment=comment)
             QuotationItem.objects.bulk_create([QuotationItem(quotation=quotation, product=product, quantity=quantity, price_at_quote=price) for product, quantity, price in sale_lines])
             messages.success(request, f"Quotation #{quotation.pk} saved. Stock was not deducted.")
             return redirect("sales:bills_quotes")
@@ -140,6 +144,9 @@ def pos_terminal_view(request):
             customer=customer,
             customer_name=customer_name or (customer.name if customer else ""),
             payment_method=payment_method,
+            subtotal_amount=subtotal,
+            vat_rate=VAT_RATE,
+            vat_amount=vat_amount,
             total_amount=total_amount,
             discount_amount=discount,
             comment=comment,
@@ -201,7 +208,12 @@ def generate_receipt_pdf(request, invoice_id):
     return render(
         request,
         "sales/receipt.html",
-        {"invoice": invoice, "receipt_items": receipt_items},
+        {
+            "invoice": invoice,
+            "receipt_items": receipt_items,
+            "store_till_number": TILL_NUMBER,
+            "vat_rate": VAT_RATE,
+        },
     )
 
 

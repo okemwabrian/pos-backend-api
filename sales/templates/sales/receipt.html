@@ -133,8 +133,8 @@
         <!-- Thermal Receipt Content -->
         <div class="receipt-content">
             <div class="center">
-                <img class="receipt-logo" src="{% static 'images/chiwas-logo.svg' %}" alt="CHIWAS LIQUOR STORE &amp; RESTAURANT">
-                <div class="store-subtitle">OPPOSITE QUICKMART</div>
+                <img class="receipt-logo" src="{% static 'images/free-house-logo.svg' %}" alt="FREE HOUSE BAR &amp; RESTAURANT">
+                <div class="store-subtitle">Till No: {{ store_till_number }}</div>
                 <div style="margin-top: 8px;">RECEIPT #{{ invoice.pk }}</div>
                 <div>{{ invoice.created_at|date:"d M Y, H:i" }}</div>
             </div>
@@ -146,7 +146,7 @@
             <div class="payment-block"><strong>PAYMENT DETAILS</strong></div>
             <div class="payment-block"><strong>Paid via:</strong> {{ invoice.get_payment_method_display }}</div>
             {% if invoice.payment_method == "till_number" %}
-                <div class="payment-block"><strong>Till:</strong> {{ invoice.till_number }}</div>
+                <div class="payment-block"><strong>Till No:</strong> {{ store_till_number }}</div>
                 {% if invoice.transaction_code %}<div class="payment-block"><strong>M-Pesa Ref:</strong> {{ invoice.transaction_code }}</div>{% endif %}
                 {% if invoice.payer_name %}<div class="payment-block"><strong>Payer:</strong> {{ invoice.payer_name }}</div>{% endif %}
             {% elif invoice.payment_method == "paybill" %}
@@ -185,6 +185,20 @@
             <div class="line"></div>
             
             <table class="total-wrapper">
+                <tr>
+                    <td>SUBTOTAL</td>
+                    <td class="numeric" colspan="3">KSh {{ invoice.subtotal_amount|floatformat:2 }}</td>
+                </tr>
+                {% if invoice.discount_amount %}
+                    <tr>
+                        <td>DISCOUNT</td>
+                        <td class="numeric" colspan="3">- KSh {{ invoice.discount_amount|floatformat:2 }}</td>
+                    </tr>
+                {% endif %}
+                <tr>
+                    <td>VAT ({{ invoice.vat_rate|floatformat:0 }}%)</td>
+                    <td class="numeric" colspan="3">KSh {{ invoice.vat_amount|floatformat:2 }}</td>
+                </tr>
                 <tr class="total-row">
                     <td>TOTAL</td>
                     <td class="numeric" colspan="3">KSh {{ invoice.total_amount|floatformat:2 }}</td>

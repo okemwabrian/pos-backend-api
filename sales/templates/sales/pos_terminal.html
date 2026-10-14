@@ -292,8 +292,8 @@
                                     <div class="small fw-semibold text-success mt-2">Change Due: KSh <span id="cash-change">0.00</span></div>
                                 </div>
                                 <div class="col-12 d-none payment-detail-group" data-payment-group="till_number">
-                                    <label for="till-number" class="form-label small fw-semibold text-secondary mb-1">Till Number</label>
-                                    <input class="form-control form-control-sm shadow-sm" id="till-number" name="till_number" data-payment-required="true" disabled>
+                                    <div class="alert alert-info py-2 mb-2"><strong>Till Number:</strong> {{ store_till_number }}</div>
+                                    <input type="hidden" name="till_number" value="{{ store_till_number }}" disabled>
                                     <label for="transaction-code-till" class="form-label small fw-semibold text-secondary mb-1 mt-2">M-Pesa Ref (optional)</label>
                                     <input class="form-control form-control-sm shadow-sm" id="transaction-code-till" name="transaction_code" disabled>
                                     <label for="payer-name" class="form-label small fw-semibold text-secondary mb-1 mt-2">Payer Name (optional)</label>
@@ -348,6 +348,10 @@
                                 <span>Subtotal</span>
                                 <span>KSh <span id="cart-subtotal">0.00</span></span>
                             </div>
+                            <div class="d-flex justify-content-between small fw-semibold text-secondary mb-1">
+                                <span>VAT ({{ vat_rate|floatformat:0 }}%)</span>
+                                <span>KSh <span id="cart-vat">0.00</span></span>
+                            </div>
                             <div class="d-flex justify-content-between align-items-center fs-4 fw-bold text-dark mt-1">
                                 <span>Total</span>
                                 <span class="text-success">KSh <span id="cart-total">0.00</span></span>
@@ -400,6 +404,7 @@
     const cartData = document.querySelector('#cart-data'); 
     const cartTotal = document.querySelector('#cart-total'); 
     const cartSubtotal = document.querySelector('#cart-subtotal'); 
+    const cartVat = document.querySelector('#cart-vat');
     const checkoutButton = document.querySelector('#checkout-button'); 
     const quotationButton = document.querySelector('#quotation-button'); 
     const discountInput = document.querySelector('#discount'); 
@@ -452,6 +457,7 @@
             cartData.value = '[]'; 
             cartTotal.textContent = '0.00'; 
             cartSubtotal.textContent = '0.00'; 
+            cartVat.textContent = '0.00';
             checkoutButton.disabled = true; 
             quotationButton.disabled = true; 
             cartItemCount.textContent = '0 Items';
@@ -482,9 +488,12 @@
         }).join(''); 
         
         cartData.value = JSON.stringify(cart.map((item) => ({ product_id: item.id, quantity: item.quantity }))); 
-        const discount = Math.max(0, Number(discountInput.value) || 0); 
+        const discount = Math.max(0, Number(discountInput.value) || 0);
+        const taxableAmount = Math.max(0, total - discount);
+        const vatAmount = Math.round((taxableAmount * {{ vat_rate }} / 100 + Number.EPSILON) * 100) / 100;
         cartSubtotal.textContent = total.toFixed(2); 
-        cartTotal.textContent = Math.max(0, total - discount).toFixed(2); 
+        cartVat.textContent = vatAmount.toFixed(2);
+        cartTotal.textContent = (taxableAmount + vatAmount).toFixed(2);
         updateCashChange();
         checkoutButton.disabled = false; 
         quotationButton.disabled = false; 

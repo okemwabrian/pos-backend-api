@@ -1,4 +1,4 @@
-# CHIWAS LIQUOR STORE
+# FREE HOUSE BAR & RESTAURANT POS
 
 A monolithic, enterprise-grade Point of Sale (POS) system built with Python, Django, and Bootstrap 5. Developed as a comprehensive final-year Computer Science capstone at Kenyatta University, this system completely bypasses the default Django admin panel to deliver a secure, role-protected frontend for inventory, CRM, and sales management.
 
@@ -7,6 +7,7 @@ A monolithic, enterprise-grade Point of Sale (POS) system built with Python, Dja
 - **Liquor Store Catalog:** Includes starter categories for spirits, beers, wines, ciders, soft drinks, and mixers, with bottle-size and crate/carton pricing fields.
 - **Advanced POS Terminal:** Features dynamic category filtering, retail/wholesale pricing toggles, and seamless cart management.
 - **Atomic Transactions:** Utilizes Django's `@transaction.atomic` to guarantee database integrity during stock deductions and invoice creation.
+- **Fixed checkout details:** Till No. **5453103** is printed on every Till payment receipt. The checkout adds **16% VAT** to the discounted item subtotal and shows the tax breakdown.
 - **Customer Receipts & Product Images:** Record a customer's name on each sale and upload product photos directly to the catalog.
 - **Quotations & CRM:** Integrated customer management allowing cashiers to generate and export custom quotes without altering inventory levels.
 - **Role-Based Access Control:** Custom security decorators enforcing strict permissions across Admin, Manager, and Cashier roles.
@@ -55,8 +56,10 @@ account credentials are intentionally not included in exported backups.
 The mobile POS includes barcode scanning, liquor/restaurant categories and
 package sizes, low-stock alerts, restocking, and persistent hold/resume
 customer tabs. Its local date-range Z-report shows sales by Cash, Till,
-Paybill, and Send Money plus cost-based profit; old sales without cost
-snapshots are marked incomplete rather than assigned a guessed cost.
+Paybill, and Send Money plus cost-based profit and VAT collected; old sales
+without cost snapshots are marked incomplete rather than assigned a guessed
+cost. New receipts use the fixed Till No. 5453103 and apply 16% VAT after
+discount.
 
 Server mode is optional. It authenticates against Django, caches the catalog,
 and queues sales and restocks for sync when online. Android background sync is
@@ -107,14 +110,14 @@ packages are not native `.exe`/`.deb` applications.
 
 `.github/workflows/build-pos-releases.yml` runs on pushes to `main` and on
 manual dispatch. It builds the debug-signed Android APK and both portable
-desktop ZIPs, uploads them as the `chiwas-pos-downloads` Actions artifact, and
+desktop ZIPs, uploads them as the `free-house-pos-downloads` Actions artifact, and
 publishes a GitHub Release for that workflow run.
 
 After pushing a change, download artifacts from **GitHub → Actions → Build
-CHIWAS POS releases → latest successful run → Artifacts → chiwas-pos-downloads**.
+FREE HOUSE POS releases → latest successful run → Artifacts → free-house-pos-downloads**.
 For public release assets, go to **GitHub → Releases** and download
-`Chiwas-Liquor-POS.apk`, `Chiwas-POS-Windows-7-8-10-11.zip`, or
-`Chiwas-POS-Ubuntu.zip`.
+`Free-House-POS.apk`, `Free-House-POS-Windows-7-8-10-11.zip`, or
+`Free-House-POS-Ubuntu.zip`.
 
 To publish a new build:
 
@@ -123,4 +126,4 @@ git status
 git push origin main
 ```
 
-Or trigger **Build CHIWAS POS releases → Run workflow** from the Actions tab.
+Or trigger **Build FREE HOUSE POS releases → Run workflow** from the Actions tab.

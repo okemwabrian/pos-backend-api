@@ -1,19 +1,19 @@
-# CHIWAS POS release packages
+# FREE HOUSE BAR & RESTAURANT POS packages
 
 ## Automated GitHub builds
 
 The workflow at `.github/workflows/build-pos-releases.yml` runs for pushes to
 `main` and for manual `workflow_dispatch`. It builds:
 
-- `Chiwas-Liquor-POS.apk` — Android debug APK, signed with Android's debug key.
-- `Chiwas-POS-Windows-7-8-10-11.zip` — local web app with a Windows setup
+- `Free-House-POS.apk` — Android debug APK, signed with Android's debug key.
+- `Free-House-POS-Windows-7-8-10-11.zip` — local web app with a Windows setup
   batch file, Desktop shortcut creation, and PowerShell local server.
-- `Chiwas-POS-Ubuntu.zip` — local web app with an Ubuntu setup script,
+- `Free-House-POS-Ubuntu.zip` — local web app with an Ubuntu setup script,
   Applications menu entry, and shell launcher.
 
-The three files are uploaded as the `chiwas-pos-downloads` Actions artifact and
+The three files are uploaded as the `free-house-pos-downloads` Actions artifact and
 attached to a GitHub Release for the workflow run. Find run artifacts under
-**GitHub → Actions → Build CHIWAS POS releases → successful run → Artifacts**;
+**GitHub → Actions → Build FREE HOUSE POS releases → successful run → Artifacts**;
 find permanent downloadable files under **GitHub → Releases**.
 
 ## Standalone operation and backup
@@ -34,6 +34,8 @@ Standalone and Django reports provide date-range sales totals split by Cash,
 Till, Paybill, and Send Money. New server invoices record cost at the time of
 sale. Historic sales whose item cost was never recorded are flagged as
 incomplete for profit calculations rather than being assigned an assumed cost.
+New sales add 16% VAT after discounts and print the fixed Till No. 5453103.
+The receipt logo, Android icon, and app title use the Free House branding.
 
 ## Local Android build
 
@@ -46,7 +48,7 @@ bash release/android/build_apk.sh
 ```
 
 The script builds the web app, syncs Capacitor, assembles a debug APK, and
-copies it to `release/android/Chiwas-POS.apk`. The APK is debug-signed and is
+copies it to `release/android/Free-House-POS.apk`. The APK is debug-signed and is
 for direct testing/installing; release signing for Play Store distribution
 requires a private signing key and is intentionally not configured in CI.
 

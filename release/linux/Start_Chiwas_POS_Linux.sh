@@ -8,7 +8,7 @@ URL="http://127.0.0.1:$PORT/"
 PROFILE="${XDG_DATA_HOME:-$HOME/.local/share}/chiwas-pos-browser"
 
 if [[ ! -f "$APP_DIR/index.html" ]]; then
-    printf 'The portable POS web files are missing from %s\n' "$APP_DIR" >&2
+    printf 'The FREE HOUSE POS web files are missing from %s\n' "$APP_DIR" >&2
     exit 1
 fi
 if ! command -v python3 >/dev/null 2>&1; then
@@ -29,13 +29,13 @@ for _ in $(seq 1 40); do
         break
     fi
     if ! kill -0 "$server_pid" 2>/dev/null; then
-        printf 'The local POS server stopped unexpectedly.\n' >&2
+        printf 'The FREE HOUSE POS local server stopped unexpectedly.\n' >&2
         exit 1
     fi
     sleep 0.25
 done
 if ! curl --fail --silent "$URL" >/dev/null; then
-    printf 'The local POS did not become ready at %s\n' "$URL" >&2
+    printf 'The FREE HOUSE POS local server did not become ready at %s\n' "$URL" >&2
     exit 1
 fi
 
@@ -50,6 +50,6 @@ elif command -v xdg-open >/dev/null 2>&1; then
     xdg-open "$URL"
     wait "$server_pid"
 else
-    printf 'Install Chromium/Chrome or xdg-utils to open the POS window.\n' >&2
+    printf 'Install Chromium/Chrome or xdg-utils to open the FREE HOUSE POS window.\n' >&2
     exit 1
 fi

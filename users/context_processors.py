@@ -2,6 +2,7 @@
 
 from django.urls import reverse
 
+from core.store import STORE_NAME, TILL_NUMBER, VAT_RATE
 from .models import ShopSettings
 
 
@@ -30,7 +31,9 @@ def shop_context(request):
 
     return {
         "shop_settings": shop_settings,
-        "shop_name": shop_settings.shop_name,
+        "shop_name": STORE_NAME,
+        "store_till_number": TILL_NUMBER,
+        "vat_rate": VAT_RATE,
         "current_page": current_page,
         "dashboard_url": reverse("users:dashboard"),
     }
