@@ -1,14 +1,35 @@
 from core.views import dashboard_view
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
 from core.permissions import is_admin
-from .forms import PublicRegistrationForm, StaffPasswordForm, StaffUserForm
+from .forms import FirstAdminSetupForm, StaffPasswordForm, StaffUserForm
 from .models import CustomUser
 
 __all__ = ["dashboard_view"]
+
+
+@require_http_methods(["GET", "POST"])
+def first_admin_setup_view(request):
+    if CustomUser.objects.exists():
+        messages.info(request, "The first administrator has already been configured.")
+        return redirect("login")
+
+    form = FirstAdminSetupForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        with transaction.atomic():
+            if CustomUser.objects.exists():
+                messages.error(request, "An administrator was created in another session.")
+                return redirect("login")
+            user = form.save()
+        login(request, user)
+        messages.success(request, "Administrator account created.")
+        return redirect("users:dashboard")
+    return render(request, "registration/first_admin_setup.html", {"form": form})
 
 
 @login_required
@@ -60,15 +81,8 @@ def user_management_view(request):
 
 @require_http_methods(["GET", "POST"])
 def register_view(request):
-    if request.user.is_authenticated:
-        return redirect("users:dashboard")
-
-    form = PublicRegistrationForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, "Account created. You can now sign in.")
-        return redirect("login")
-    return render(request, "registration/register.html", {"form": form})
+    messages.error(request, "Ask the store administrator to create your account.")
+    return redirect("login")
 
 
 @login_required

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=CHIWAS LIQUOR STORE POS
+Comment=Point of sale for CHIWAS LIQUOR STORE & RESTAURANT
+Exec=/home/okemwa/Desktop/Dev_Projects/pos-backend-api/run_chiwas_linux.sh
+Icon=/home/okemwa/Desktop/Dev_Projects/pos-backend-api/static/images/chiwas-logo.svg
+Terminal=false
+Categories=Office;Finance;
+StartupNotify=true

@@ -2,3 +2,14 @@ venv/
 __pycache__/
 *.sqlite3
 .env
+mobile/node_modules/
+mobile/www/
+mobile/android/.gradle/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/local.properties
+release/windows/portable-pos/*
+!release/windows/portable-pos/.gitkeep
+release/windows/*.exe
+release/android/*.apk
+release/dist/

@@ -1,0 +1,8 @@
+{
+  "appId": "com.chiwasliquor.pos",
+  "appName": "CHIWAS LIQUOR STORE",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

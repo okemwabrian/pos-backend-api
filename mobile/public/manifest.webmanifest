@@ -1,0 +1,17 @@
+{
+  "name": "CHIWAS LIQUOR STORE & RESTAURANT POS",
+  "short_name": "Chiwas POS",
+  "description": "Standalone offline point of sale for CHIWAS LIQUOR STORE & RESTAURANT.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f6f2f3",
+  "theme_color": "#321425",
+  "icons": [
+    {
+      "src": "./chiwas-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

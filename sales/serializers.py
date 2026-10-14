@@ -1,18 +1,48 @@
 from rest_framework import serializers
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from .models import Invoice, InvoiceItem
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceItem
-        fields = ['product', 'quantity', 'price_at_sale']
+        fields = ['product', 'quantity', 'price_at_sale', 'cost_at_sale']
+        read_only_fields = ['cost_at_sale']
 
 class InvoiceSerializer(serializers.ModelSerializer):
     items = InvoiceItemSerializer(many=True)
 
     class Meta:
         model = Invoice
-        fields = ['id', 'cashier', 'customer', 'payment_method', 'total_amount', 'created_at', 'items']
+        fields = [
+            'id',
+            'cashier',
+            'customer',
+            'customer_name',
+            'payment_method',
+            'till_number',
+            'transaction_code',
+            'payer_name',
+            'paybill_number',
+            'account_number',
+            'phone_number',
+            'amount_tendered',
+            'change_amount',
+            'total_amount',
+            'created_at',
+            'items',
+        ]
+        read_only_fields = ['change_amount']
+
+    def validate(self, attrs):
+        invoice_data = {key: value for key, value in attrs.items() if key != 'items'}
+        invoice = Invoice(**invoice_data)
+        try:
+            invoice.clean()
+        except ValidationError as error:
+            raise serializers.ValidationError(error.message_dict) from error
+        attrs['change_amount'] = invoice.change_amount
+        return attrs
 
     # The atomic decorator ensures everything succeeds, or nothing saves at all
     @transaction.atomic 
@@ -20,7 +50,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         
         # 1. Create the main Invoice
-        invoice = Invoice.objects.create(**validated_data)
+        invoice = Invoice(**validated_data)
+        invoice.full_clean()
+        invoice.save()
         
         # 2. Loop through items to save them AND update stock
         for item_data in items_data:
@@ -34,7 +66,11 @@ class InvoiceSerializer(serializers.ModelSerializer):
                 )
             
             # Save the invoice item
-            InvoiceItem.objects.create(invoice=invoice, **item_data)
+            InvoiceItem.objects.create(
+                invoice=invoice,
+                cost_at_sale=product.cost_price,
+                **item_data,
+            )
             
             # Deduct the stock and save the product
             product.stock_quantity -= quantity_sold

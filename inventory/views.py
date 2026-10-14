@@ -89,7 +89,7 @@ def inventory_export_download_view(request, export_format):
 @require_http_methods(["GET", "POST"])
 def products_view(request):
     instance = get_object_or_404(Product, pk=request.POST.get("id")) if request.POST.get("id") else None
-    form = ProductForm(request.POST or None, instance=instance)
+    form = ProductForm(request.POST or None, request.FILES or None, instance=instance)
     if request.method == "POST" and request.POST.get("delete"):
         instance.delete()
         messages.success(request, "Product deleted.")

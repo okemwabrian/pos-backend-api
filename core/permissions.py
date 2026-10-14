@@ -2,9 +2,9 @@ from rest_framework.permissions import BasePermission
 
 
 def is_admin_or_manager(user):
-    """Allow management pages to managers and users with unrestricted access."""
+    """Allow every POS role to manage store operations."""
     return user.is_authenticated and (
-        user.is_superuser or user.role in {"admin", "manager"}
+        user.is_superuser or user.role in {"admin", "manager", "cashier"}
     )
 
 

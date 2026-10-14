@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Inventory | CorePoint POS{% endblock %}
+{% block title %}Inventory | {{ shop_name }}{% endblock %}
 
 {% block content %}
 <style>
@@ -54,7 +54,7 @@
                     </h5>
                 </div>
 
-                <form method="post" novalidate>
+                <form method="post" enctype="multipart/form-data" novalidate>
                     {% csrf_token %}
                     {% if edit_id %}
                         <input type="hidden" name="id" value="{{ edit_id }}">
@@ -129,10 +129,17 @@
                                 <tr>
                                     <!-- Product Info -->
                                     <td class="ps-3">
+                                        {% if product.image %}
+                                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="rounded mb-2" style="width:72px;height:72px;object-fit:cover">
+                                        {% elif product.image_url %}
+                                            <img src="{{ product.image_url }}" alt="{{ product.name }}" class="rounded mb-2" style="width:72px;height:72px;object-fit:cover">
+                                        {% endif %}
                                         <div class="fw-bold text-dark">{{ product.name }}</div>
                                         <div class="text-muted mt-1">
                                             <i class="fa-solid fa-barcode me-1 small"></i>
                                             <span class="sku-badge">{{ product.sku }}</span>
+                                            {% if product.bottle_size %}<span class="badge text-bg-light border">{{ product.bottle_size }}</span>{% endif %}
+                                            {% if product.case_price %}<span class="small text-muted">Case of {{ product.units_per_case }} · KSh {{ product.case_price|floatformat:2 }}</span>{% endif %}
                                         </div>
                                     </td>
 
@@ -150,6 +157,11 @@
                                         {% if product.is_service %}
                                             <span class="text-muted">—</span>
                                         {% else %}
+                                            {% if product.stock_quantity == 0 %}
+                                                <span class="badge text-bg-danger me-1">Out of stock</span>
+                                            {% elif product.stock_quantity <= product.low_stock_threshold %}
+                                                <span class="badge text-bg-warning me-1">Low stock</span>
+                                            {% endif %}
                                             <span class="fw-bold fs-6 text-dark">{{ product.stock_quantity }}</span>
                                         {% endif %}
                                     </td>

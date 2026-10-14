@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,13 +21,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-#(s5q+x10#ka88lnq0n@thr#=^h2g+wlxk)q4q3)quilnp5hpx'
+SECRET_KEY = os.environ.get(
+    "DJANGO_SECRET_KEY",
+    'django-insecure-#(s5q+x10#ka88lnq0n@thr#=^h2g+wlxk)q4q3)quilnp5hpx',
+)
 
 # Change this from True to False for security (optional but recommended later)
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "true").lower() == "true"
 
 # Add the wildcards to allow PythonAnywhere to host it
-ALLOWED_HOSTS = ['*', '.pythonanywhere.com']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get(
+        "DJANGO_ALLOWED_HOSTS", "*,.pythonanywhere.com"
+    ).split(",")
+    if host.strip()
+]
 
 
 # Application definition
@@ -42,7 +52,9 @@ INSTALLED_APPS = [
 
     # Third-party apps
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
+    'offline',
 
     # Local POS apps
     'users',
@@ -91,7 +103,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': Path(os.environ.get("CHIWAS_DATABASE_PATH", BASE_DIR / "db.sqlite3")),
     }
 }
 
@@ -130,7 +142,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+MEDIA_URL = "/media/"
+MEDIA_ROOT = Path(
+    os.environ.get("CHIWAS_MEDIA_PATH", BASE_DIR / "media")
+)
 
 
 # Email
@@ -147,4 +164,13 @@ AUTH_USER_MODEL = 'users.CustomUser'
 LOGIN_REDIRECT_URL = 'users:dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        "CORS_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:8766,http://localhost:8766,"
+        "https://localhost,capacitor://localhost",
+    ).split(",")
+    if origin.strip()
+]
+CORS_ALLOW_ALL_ORIGINS = False

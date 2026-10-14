@@ -1,0 +1,29 @@
+{
+  "name": "chiwas-liquor-pos",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "prebuild": "node copy_django_vendor.mjs",
+    "build": "vite build",
+    "postbuild": "node generate_pwa.mjs",
+    "cap:sync": "cap sync",
+    "android:add": "cap add android",
+    "android:open": "cap open android"
+  },
+  "dependencies": {
+    "@aparajita/capacitor-secure-storage": "^7.1.6",
+    "@capacitor/app": "^7.0.2",
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/network": "^7.0.2",
+    "@fortawesome/fontawesome-free": "^6.5.2",
+    "bootstrap": "^5.3.3",
+    "chart.js": "^4.4.3",
+    "html5-qrcode": "^2.3.8"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "vite": "^6.4.1"
+  }
+}

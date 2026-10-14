@@ -15,10 +15,27 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.conf import settings
+from django.views.static import serve as serve_media
 from django.urls import path, include
+from django.views.generic import RedirectView
 from . import views
 
+admin.site.site_header = "CHIWAS LIQUOR STORE"
+admin.site.site_title = "CHIWAS LIQUOR STORE"
+admin.site.index_title = "Store administration"
+
 urlpatterns = [
+    path(
+        "media/<path:path>",
+        serve_media,
+        {"document_root": settings.MEDIA_ROOT},
+        name="media",
+    ),
+    path(
+        "favicon.ico",
+        RedirectView.as_view(url="/static/images/chiwas-logo.svg", permanent=True),
+    ),
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', include('users.urls')),
@@ -34,6 +51,7 @@ urlpatterns = [
     path('api/crm/', include('crm.api_urls')),  # Connects Customers & Suppliers
     path('crm/', include('crm.urls')),
     path('api/sales/', include('sales.api_urls')),
+    path('api/pos/', include('offline.urls')),
     path('sales/', include('sales.urls')),
     path('purchases/', include('purchases.urls')),
 ]

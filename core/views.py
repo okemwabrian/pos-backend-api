@@ -14,7 +14,7 @@ from finance.forms import ExpenseForm
 from finance.models import Expense
 from inventory.models import Product
 from crm.models import Customer
-from sales.models import Invoice, Quotation
+from sales.models import Invoice, InvoiceItem, Quotation
 from users.models import ShopSettings
 from users.forms import ShopSettingsForm
 
@@ -223,6 +223,43 @@ def reports_view(request):
     if preview_type not in {"stock", "sales", "profit"}:
         preview_type = "sales"
     preview_title, preview_headers, preview_rows = report_preview_data(preview_type)
+    today = timezone.localdate()
+    try:
+        report_start = date.fromisoformat(request.GET.get("start_date", ""))
+    except ValueError:
+        report_start = today
+    try:
+        report_end = date.fromisoformat(request.GET.get("end_date", ""))
+    except ValueError:
+        report_end = today
+    if report_end < report_start:
+        report_start, report_end = report_end, report_start
+    z_invoices = Invoice.objects.filter(
+        created_at__date__range=(report_start, report_end)
+    )
+    z_revenue = z_invoices.aggregate(total=Sum("total_amount"))["total"] or 0
+    z_cost_of_goods = (
+        InvoiceItem.objects.filter(invoice__in=z_invoices).aggregate(
+            total=Sum(F("cost_at_sale") * F("quantity"))
+        )["total"]
+        or 0
+    )
+    z_cost_data_complete = not InvoiceItem.objects.filter(
+        invoice__in=z_invoices, cost_at_sale__isnull=True
+    ).exists()
+    z_expenses = Expense.objects.filter(
+        date__range=(report_start, report_end)
+    ).aggregate(total=Sum("amount"))["total"] or 0
+    z_payment_breakdown = [
+        {
+            "key": payment_key,
+            "label": payment_label,
+            "total": z_invoices.filter(payment_method=payment_key).aggregate(
+                total=Sum("total_amount")
+            )["total"] or 0,
+        }
+        for payment_key, payment_label in Invoice.PAYMENT_CHOICES
+    ]
     quotations = Quotation.objects.select_related("cashier", "customer").order_by("-created_at")
     return render(
         request,
@@ -240,6 +277,15 @@ def reports_view(request):
             "preview_title": preview_title,
             "preview_headers": preview_headers,
             "preview_rows": preview_rows[:100],
+            "z_start_date": report_start,
+            "z_end_date": report_end,
+            "z_revenue": z_revenue,
+            "z_cost_of_goods": z_cost_of_goods,
+            "z_cost_data_complete": z_cost_data_complete,
+            "z_expenses": z_expenses,
+            "z_profit": z_revenue - z_cost_of_goods - z_expenses,
+            "z_payment_breakdown": z_payment_breakdown,
+            "z_invoice_count": z_invoices.count(),
         },
     )
 

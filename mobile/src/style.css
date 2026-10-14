@@ -1,0 +1,113 @@
+:root {
+  color: #25151d;
+  background: #f6f2f3;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  font-weight: 400;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+.hidden { display: none !important; }
+.app-shell { max-width: 1280px; margin: 0 auto; padding: max(1rem, env(safe-area-inset-top)) 1rem max(2rem, env(safe-area-inset-bottom)); }
+.panel { background: #fff; border: 1px solid #e9dfe4; border-radius: 1rem; box-shadow: 0 8px 26px #3214250c; padding: 1.1rem; }
+.login-panel { max-width: 460px; margin: 7vh auto 0; padding: 2rem; }
+.login-logo { display: block; width: 100%; max-width: 270px; height: 145px; object-fit: contain; margin: 0 auto .75rem; }
+.topbar-logo { display: block; width: min(250px, 45vw); height: 78px; object-fit: contain; }
+.eyebrow { color: #7a203e; font-size: .7rem; font-weight: 800; letter-spacing: .12em; margin: .8rem 0 .25rem; }
+h1, h2, p { margin-top: 0; }
+h1 { font-size: 1.5rem; margin-bottom: .35rem; }
+h2 { font-size: 1rem; margin: 0; }
+.muted { color: #73666d; }
+.small { font-size: .8rem; }
+label { display: block; font-size: .8rem; font-weight: 700; margin: .8rem 0 .35rem; }
+input, select { width: 100%; border: 1px solid #d8cbd2; border-radius: .65rem; min-height: 2.75rem; padding: .65rem .75rem; background: #fff; color: inherit; }
+input:focus, select:focus { outline: 3px solid #7a203e22; border-color: #7a203e; }
+.primary, .secondary, .plain-button { border: 0; border-radius: .7rem; min-height: 2.75rem; padding: .65rem 1rem; font-weight: 750; }
+.primary { background: #7a203e; color: #fff; }
+.primary:disabled { opacity: .5; cursor: not-allowed; }
+.secondary { background: #f0e6ea; color: #54162d; }
+.plain-button { background: transparent; color: #54162d; }
+.full-width { width: 100%; margin-top: 1rem; }
+.message { min-height: 1.3rem; color: #7a203e; font-size: .88rem; margin: .75rem 0 0; }
+.topbar, .topbar-actions, .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+.topbar { padding: .25rem 0 1rem; }
+.topbar .eyebrow { margin-top: 0; }
+.topbar h1 { margin-bottom: 0; }
+.topbar-actions { flex-wrap: wrap; justify-content: flex-end; }
+.status-pill { display: inline-flex; align-items: center; border-radius: 999px; background: #f0e6ea; color: #54162d; padding: .35rem .65rem; font-size: .75rem; font-weight: 750; white-space: nowrap; }
+.status-pill.disconnected { background: #fff0d4; color: #754700; }
+.status-pill.low-stock { background: #fff0d4; color: #754700; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .8fr); gap: 1rem; align-items: start; }
+.catalog-panel, .checkout-panel { min-width: 0; }
+.panel-heading { margin-bottom: .8rem; }
+.panel-heading p { margin-bottom: 0; }
+.panel-heading input { max-width: 270px; }
+.product-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: .65rem; max-height: 65vh; overflow: auto; }
+.product-card { display: flex; flex-direction: column; gap: .5rem; border: 1px solid #eee5e9; border-radius: .8rem; padding: .8rem; }
+.product-thumbnail { width: 100%; height: 112px; border-radius: .55rem; object-fit: cover; }
+.product-card h3 { font-size: .93rem; margin: 0; }
+.product-meta { color: #73666d; font-size: .75rem; line-height: 1.5; }
+.product-bottom { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-top: auto; }
+.product-price { font-weight: 800; color: #602038; }
+.product-card button { padding: .45rem .65rem; border-radius: .55rem; border: 0; background: #7a203e; color: white; font-weight: 700; }
+.product-card button:disabled { background: #b9afb3; }
+.cart-list { max-height: 28vh; overflow: auto; }
+.cart-row { display: grid; grid-template-columns: 1fr auto; gap: .3rem .6rem; padding: .7rem 0; border-bottom: 1px solid #eee5e9; }
+.cart-row small { color: #73666d; }
+.quantity-controls { grid-column: 1 / -1; display: flex; align-items: center; gap: .5rem; }
+.quantity-controls button { border: 1px solid #e2d5dc; background: #fff; border-radius: .45rem; min-width: 2rem; min-height: 2rem; }
+.quantity-controls .remove { margin-left: auto; color: #9b2342; }
+.total-line { display: flex; justify-content: space-between; border-top: 1px solid #e7dce2; padding-top: .85rem; margin: .9rem 0 0; font-size: 1.05rem; }
+.restock-panel, .queue-panel { margin-top: 1rem; }
+.backup-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.backup-actions button { flex: 1 1 180px; }
+.restock-form { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: .6rem; }
+.restock-form label { margin-top: 0; }
+.restock-form button { margin-top: .8rem; }
+.report-range { display: grid; grid-template-columns: 1fr 1fr auto; align-items: end; gap: .6rem; }
+.report-range label { margin-top: 0; }
+.report-range button { margin-top: .8rem; }
+.queue-list { list-style: none; margin: 0; padding: 0; }
+.queue-list li { display: flex; justify-content: space-between; gap: .75rem; padding: .65rem 0; border-top: 1px solid #eee5e9; font-size: .85rem; }
+.queue-error { color: #9b2342; }
+.queue-list button { border: 0; color: #54162d; background: #f0e6ea; border-radius: .45rem; padding: .35rem .55rem; }
+.receipt-panel { display: none; }
+.receipt-panel:not(.hidden) { display: block; max-width: 420px; margin: 1rem auto; padding: 1.2rem; border: 1px solid #e9dfe4; border-radius: 1rem; background: #fff; font: .9rem/1.5 "Courier New", monospace; }
+.receipt-logo { display: block; width: 100%; max-width: 180px; height: 100px; object-fit: contain; margin: 0 auto .4rem; filter: grayscale(100%) contrast(200%); }
+.receipt-panel h2, .receipt-panel p { text-align: center; }
+.receipt-panel table { width: 100%; border-collapse: collapse; }
+.receipt-panel td { padding: .25rem; vertical-align: top; }
+.receipt-panel td:last-child { text-align: right; white-space: nowrap; }
+.receipt-panel button { border: 0; border-radius: .55rem; margin: .4rem .25rem 0 0; padding: .55rem .75rem; background: #f0e6ea; color: #54162d; }
+.receipt-width-control { display: inline-flex; align-items: center; gap: .4rem; margin-right: .4rem; }
+.receipt-width-control select { width: auto; min-height: 2.25rem; }
+
+@media (max-width: 780px) {
+  .workspace { grid-template-columns: 1fr; }
+  .topbar { align-items: flex-start; flex-direction: column; }
+  .topbar-logo { width: 220px; height: 68px; }
+  .topbar-actions { justify-content: flex-start; }
+  .product-list { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: none; }
+  .restock-form { grid-template-columns: 1fr; }
+  .report-range { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .app-shell { padding-left: .65rem; padding-right: .65rem; }
+  .panel { padding: .8rem; }
+  .product-list { grid-template-columns: 1fr; }
+  .panel-heading { align-items: stretch; flex-direction: column; }
+  .panel-heading input { max-width: none; }
+}
+@media print {
+  @page { size: 80mm auto; margin: 0; }
+  @page thermal58 { size: 58mm auto; margin: 0; }
+  body * { visibility: hidden !important; }
+  #receipt-panel, #receipt-panel * { visibility: visible !important; }
+  #receipt-panel { display: block !important; position: absolute; inset: 0; width: 76mm; padding: 4mm; color: #000; font: 12px/1.4 "Courier New", monospace; }
+  #receipt-panel button, .receipt-width-control { display: none !important; }
+  #receipt-panel.paper-58 { page: thermal58; width: 54mm; padding: 2mm; font-size: 10px; }
+  #receipt-panel.paper-58 .receipt-logo { width: 38mm; max-width: 38mm; height: 22mm; }
+}

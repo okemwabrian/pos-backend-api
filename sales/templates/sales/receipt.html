@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Receipt #{{ invoice.pk }} | {{ shop_name }}</title>
     
     <!-- UI Fonts & Icons for the Screen View -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome/css/all.min.css' %}">
     
     <style>
         /* ---------------------------------------------------------
@@ -21,13 +21,13 @@
             min-height: 100vh;
             margin: 0;
             padding: 20px;
-            font-family: 'Inter', sans-serif;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
         }
 
         .receipt-card {
             background: #ffffff;
-            width: 340px;
-            padding: 30px;
+            width: min(100%, 420px);
+            padding: 24px;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
         }
@@ -44,11 +44,22 @@
 
         .center { text-align: center; }
         .line { border-top: 1.5px dashed #000; margin: 12px 0; }
+        .receipt-logo {
+            display: block;
+            width: 100%;
+            max-width: 180px;
+            max-height: 105px;
+            object-fit: contain;
+            margin: 0 auto 4px;
+            filter: grayscale(100%) contrast(200%);
+        }
+        .store-subtitle { font-size: 11px; font-weight: bold; }
+        .payment-block { overflow-wrap: anywhere; }
         
         table { width: 100%; border-collapse: collapse; margin: 10px 0; }
         th { text-align: left; font-weight: bold; padding-bottom: 6px; border-bottom: 1.5px dashed #000; }
-        th:last-child, td:last-child { text-align: right; }
-        td { padding: 6px 0; vertical-align: top; }
+        th.numeric, td.numeric { text-align: right; }
+        td { padding: 6px 2px 6px 0; vertical-align: top; }
         
         .item-name { font-weight: bold; display: block; margin-bottom: 2px; }
         .item-meta { font-size: 11px; color: #333; }
@@ -90,14 +101,17 @@
            4. Print-Specific Override (Triggered on window.print)
            --------------------------------------------------------- */
         @media print {
-            @page { size: 80mm auto; margin: 0; }
+            @page thermal80 { size: 80mm auto; margin: 0; }
+            @page thermal58 { size: 58mm auto; margin: 0; }
+            body { page: thermal80; }
+            body.paper-58 { page: thermal58; }
             body { 
                 background: transparent; 
                 padding: 0; 
                 display: block; 
             }
             .receipt-card { 
-                width: 76mm; /* Standard thermal printable area */
+                width: 76mm;
                 padding: 2mm; 
                 margin: 0 auto; 
                 box-shadow: none; 
@@ -106,6 +120,10 @@
             .actions { display: none; } /* Hide buttons on print */
             .receipt-content { font-size: 12px; color: #000; }
             .line { border-top: 1px dashed #000; }
+            .paper-58 .receipt-card { width: 54mm; }
+            .receipt-logo { width: 38mm; max-width: 38mm; max-height: 22mm; }
+            .paper-58 .receipt-content { font-size: 10px; }
+            .receipt-content, .receipt-card { color: #000 !important; }
         }
     </style>
 </head>
@@ -115,18 +133,30 @@
         <!-- Thermal Receipt Content -->
         <div class="receipt-content">
             <div class="center">
-                <h2 style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold;">{{ shop_name|upper }}</h2>
-                <div style="font-size: 12px;">POS RECEIPT</div>
-                <div style="margin-top: 10px;">Invoice #{{ invoice.pk }}</div>
+                <img class="receipt-logo" src="{% static 'images/chiwas-logo.svg' %}" alt="CHIWAS LIQUOR STORE &amp; RESTAURANT">
+                <div class="store-subtitle">OPPOSITE QUICKMART</div>
+                <div style="margin-top: 8px;">RECEIPT #{{ invoice.pk }}</div>
                 <div>{{ invoice.created_at|date:"d M Y, H:i" }}</div>
             </div>
             
             <div class="line"></div>
-            
             <div><strong>Cashier:</strong> {{ invoice.cashier.get_full_name|default:invoice.cashier.username }}</div>
-            <div><strong>Payment:</strong> {{ invoice.get_payment_method_display }}</div>
-            {% if invoice.customer %}
-                <div><strong>Customer:</strong> {{ invoice.customer.name }}</div>
+            <div><strong>Customer:</strong> {% if invoice.customer_name %}{{ invoice.customer_name }}{% elif invoice.customer %}{{ invoice.customer.name }}{% else %}Walk-in Customer{% endif %}</div>
+            <div class="line"></div>
+            <div class="payment-block"><strong>PAYMENT DETAILS</strong></div>
+            <div class="payment-block"><strong>Paid via:</strong> {{ invoice.get_payment_method_display }}</div>
+            {% if invoice.payment_method == "till_number" %}
+                <div class="payment-block"><strong>Till:</strong> {{ invoice.till_number }}</div>
+                {% if invoice.transaction_code %}<div class="payment-block"><strong>M-Pesa Ref:</strong> {{ invoice.transaction_code }}</div>{% endif %}
+                {% if invoice.payer_name %}<div class="payment-block"><strong>Payer:</strong> {{ invoice.payer_name }}</div>{% endif %}
+            {% elif invoice.payment_method == "paybill" %}
+                <div class="payment-block"><strong>Paybill:</strong> {{ invoice.paybill_number }}</div>
+                <div class="payment-block"><strong>Acc:</strong> {{ invoice.account_number }}</div>
+            {% elif invoice.payment_method == "send_money" %}
+                <div class="payment-block"><strong>Phone:</strong> {{ invoice.phone_number }}</div>
+                {% if invoice.transaction_code %}<div class="payment-block"><strong>M-Pesa Ref:</strong> {{ invoice.transaction_code }}</div>{% endif %}
+            {% elif invoice.payment_method == "cash" %}
+                <div><strong>Tendered:</strong> KSh {{ invoice.amount_tendered|floatformat:2 }}</div>
             {% endif %}
             
             <div class="line"></div>
@@ -134,18 +164,19 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Item Description</th>
-                        <th>Amount</th>
+                        <th>Item</th>
+                        <th class="numeric">Qty</th>
+                        <th class="numeric">Price</th>
+                        <th class="numeric">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in receipt_items %}
                         <tr>
-                            <td>
-                                <span class="item-name">{{ item.product.name }}</span>
-                                <span class="item-meta">{{ item.quantity }} × KSh {{ item.price_at_sale|floatformat:2 }}</span>
-                            </td>
-                            <td>KSh {{ item.line_total|floatformat:2 }}</td>
+                            <td><span class="item-name">{{ item.product.name }}</span></td>
+                            <td class="numeric">{{ item.quantity }}</td>
+                            <td class="numeric">{{ item.price_at_sale|floatformat:2 }}</td>
+                            <td class="numeric">{{ item.line_total|floatformat:2 }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -156,19 +187,27 @@
             <table class="total-wrapper">
                 <tr class="total-row">
                     <td>TOTAL</td>
-                    <td>KSh {{ invoice.total_amount|floatformat:2 }}</td>
+                    <td class="numeric" colspan="3">KSh {{ invoice.total_amount|floatformat:2 }}</td>
                 </tr>
+                {% if invoice.payment_method == "cash" %}
+                    <tr><td>CHANGE</td><td class="numeric" colspan="3">KSh {{ invoice.change_amount|floatformat:2 }}</td></tr>
+                {% endif %}
             </table>
             
             <div class="line"></div>
             
             <div class="center" style="margin-top: 15px;">
-                Thank you for your business!
+                Thank you for shopping with us!
             </div>
         </div>
 
         <!-- Web UI Buttons (Hidden during printing) -->
         <div class="actions no-print">
+            <label for="paper-width" class="small fw-semibold">Receipt width</label>
+            <select id="paper-width" class="form-select">
+                <option value="80">80 mm</option>
+                <option value="58">58 mm</option>
+            </select>
             <button type="button" class="btn btn-print" onclick="window.print()">
                 <i class="fa-solid fa-print me-2"></i>Print Receipt
             </button>
@@ -180,6 +219,9 @@
 
     <!-- Auto-trigger print dialog when the page loads -->
     <script>
+        document.querySelector('#paper-width').addEventListener('change', (event) => {
+            document.body.classList.toggle('paper-58', event.target.value === '58');
+        });
         window.onload = function() {
             setTimeout(function() {
                 window.print();

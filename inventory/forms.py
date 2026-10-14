@@ -13,9 +13,32 @@ class CategoryForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ["name", "sku", "category", "image_url", "cost_price", "retail_price", "wholesale_price", "is_service", "stock_quantity", "low_stock_threshold"]
+        fields = [
+            "name",
+            "sku",
+            "category",
+            "image",
+            "bottle_size",
+            "cost_price",
+            "retail_price",
+            "wholesale_price",
+            "units_per_case",
+            "case_price",
+            "is_service",
+            "stock_quantity",
+            "low_stock_threshold",
+        ]
+        widgets = {
+            "sku": forms.TextInput(
+                attrs={"autofocus": True, "autocomplete": "off"}
+            )
+        }
 
 
 class RestockForm(forms.Form):
-    sku = forms.CharField(max_length=50, help_text="Scan or type the product SKU to confirm.")
+    sku = forms.CharField(
+        max_length=50,
+        help_text="Scan or type the product SKU to confirm.",
+        widget=forms.TextInput(attrs={"autofocus": True, "autocomplete": "off"}),
+    )
     quantity = forms.IntegerField(min_value=1, help_text="Quantity to add to stock.")

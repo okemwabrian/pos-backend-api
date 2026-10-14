@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}POS Terminal | {{ shop_name }}{% endblock %}
 
@@ -174,7 +175,9 @@
                 {% for product in products %}
                     <div class="col product-card" data-category="{{ product.category_id|default:'uncategorised' }}">
                         <article class="spa-card card h-100 border-0 p-0">
-                            {% if product.image_url %}
+                            {% if product.image %}
+                                <img class="product-image" src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+                            {% elif product.image_url %}
                                 <img class="product-image" src="{{ product.image_url }}" alt="{{ product.name }}" loading="lazy">
                             {% else %}
                                 <div class="product-image d-flex align-items-center justify-content-center bg-light text-muted">
@@ -188,6 +191,11 @@
                                     {% if product.is_service %}
                                         <span class="badge bg-info bg-opacity-10 text-info border border-info-subtle px-2 py-1 rounded">Service</span>
                                     {% endif %}
+                                    {% if not product.is_service and product.stock_quantity == 0 %}
+                                        <span class="badge text-bg-danger">Out of stock</span>
+                                    {% elif not product.is_service and product.stock_quantity <= product.low_stock_threshold %}
+                                        <span class="badge text-bg-warning">Low stock · {{ product.stock_quantity }}</span>
+                                    {% endif %}
                                 </div>
                                 
                                 <div class="small text-muted mb-auto">
@@ -199,13 +207,19 @@
                                             <i class="fa-solid fa-cubes w-15px opacity-75"></i> {{ product.stock_quantity }} in stock
                                         {% endif %}
                                     </div>
+                                    {% if product.bottle_size %}
+                                        <div><i class="fa-solid fa-wine-bottle w-15px opacity-75"></i> {{ product.bottle_size }}</div>
+                                    {% endif %}
+                                    {% if product.case_price %}
+                                        <div><i class="fa-solid fa-boxes-stacked w-15px opacity-75"></i> Case of {{ product.units_per_case }}: KSh {{ product.case_price|floatformat:2 }}</div>
+                                    {% endif %}
                                 </div>
                                 
                                 <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                                     <div class="fs-6 fw-bold text-success">
                                         KSh <span class="display-price">{{ product.retail_price|floatformat:2 }}</span>
                                     </div>
-                                    <button type="button" class="btn btn-sm btn-success text-white rounded-circle action-btn add-product shadow-sm" style="width: 32px; height: 32px; padding: 0;" data-id="{{ product.pk }}" data-sku="{{ product.sku }}" data-name="{{ product.name|escapejs }}" data-retail-price="{{ product.retail_price }}" data-wholesale-price="{{ product.wholesale_price }}" data-stock="{{ product.stock_quantity }}" data-is-service="{{ product.is_service|yesno:'true,false' }}">
+                                    <button type="button" class="btn btn-sm btn-success text-white rounded-circle action-btn add-product shadow-sm" style="width: 32px; height: 32px; padding: 0;" data-id="{{ product.pk }}" data-sku="{{ product.sku }}" data-barcode="{{ product.sku }}" data-name="{{ product.name|escapejs }}" data-retail-price="{{ product.retail_price }}" data-wholesale-price="{{ product.wholesale_price }}" data-stock="{{ product.stock_quantity }}" data-low-stock-threshold="{{ product.low_stock_threshold }}" data-is-service="{{ product.is_service|yesno:'true,false' }}" {% if not product.is_service and product.stock_quantity == 0 %}disabled aria-label="Out of stock"{% endif %}>
                                         <i class="fa-solid fa-plus"></i>
                                     </button>
                                 </div>
@@ -262,11 +276,40 @@
                             <div class="row g-3">
                                 <div class="col-6">
                                     <label for="payment-method" class="form-label small fw-semibold text-secondary mb-1">Payment</label>
-                                    <select class="form-select form-select-sm shadow-sm" name="payment_method" id="payment-method">
+                                    <select class="form-select form-select-sm shadow-sm" name="payment_method" id="payment-method" required>
+                                        <option value="" selected disabled>Choose payment</option>
                                         <option value="cash">Cash</option>
+                                        <option value="till_number">TILL NUMBER</option>
+                                        <option value="paybill">PAYBILL</option>
+                                        <option value="send_money">SEND MONEY</option>
                                         <option value="mpesa">M-Pesa</option>
                                         <option value="card">Card</option>
                                     </select>
+                                </div>
+                                <div class="col-12 d-none payment-detail-group" data-payment-group="cash">
+                                    <label for="amount-tendered" class="form-label small fw-semibold text-secondary mb-1">Amount Tendered (KSh)</label>
+                                    <input class="form-control form-control-sm shadow-sm" id="amount-tendered" name="amount_tendered" type="number" min="0" step="0.01" data-payment-required="true" disabled>
+                                    <div class="small fw-semibold text-success mt-2">Change Due: KSh <span id="cash-change">0.00</span></div>
+                                </div>
+                                <div class="col-12 d-none payment-detail-group" data-payment-group="till_number">
+                                    <label for="till-number" class="form-label small fw-semibold text-secondary mb-1">Till Number</label>
+                                    <input class="form-control form-control-sm shadow-sm" id="till-number" name="till_number" data-payment-required="true" disabled>
+                                    <label for="transaction-code-till" class="form-label small fw-semibold text-secondary mb-1 mt-2">M-Pesa Ref (optional)</label>
+                                    <input class="form-control form-control-sm shadow-sm" id="transaction-code-till" name="transaction_code" disabled>
+                                    <label for="payer-name" class="form-label small fw-semibold text-secondary mb-1 mt-2">Payer Name (optional)</label>
+                                    <input class="form-control form-control-sm shadow-sm" id="payer-name" name="payer_name" disabled>
+                                </div>
+                                <div class="col-12 d-none payment-detail-group" data-payment-group="paybill">
+                                    <label for="paybill-number" class="form-label small fw-semibold text-secondary mb-1">Business/Paybill Number</label>
+                                    <input class="form-control form-control-sm shadow-sm" id="paybill-number" name="paybill_number" data-payment-required="true" disabled>
+                                    <label for="account-number" class="form-label small fw-semibold text-secondary mb-1 mt-2">Account Number</label>
+                                    <input class="form-control form-control-sm shadow-sm" id="account-number" name="account_number" data-payment-required="true" disabled>
+                                </div>
+                                <div class="col-12 d-none payment-detail-group" data-payment-group="send_money">
+                                    <label for="payment-phone-number" class="form-label small fw-semibold text-secondary mb-1">Phone Number</label>
+                                    <input class="form-control form-control-sm shadow-sm" id="payment-phone-number" name="phone_number" type="tel" data-payment-required="true" disabled>
+                                    <label for="transaction-code-send-money" class="form-label small fw-semibold text-secondary mb-1 mt-2">M-Pesa Ref (optional)</label>
+                                    <input class="form-control form-control-sm shadow-sm" id="transaction-code-send-money" name="transaction_code" disabled>
                                 </div>
                                 <div class="col-6">
                                     <label for="price-type" class="form-label small fw-semibold text-secondary mb-1">Price Type</label>
@@ -276,13 +319,17 @@
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <label for="customer-id" class="form-label small fw-semibold text-secondary mb-1">Customer</label>
+                                    <label for="customer-id" class="form-label small fw-semibold text-secondary mb-1">Saved Customer (optional)</label>
                                     <select class="form-select form-select-sm shadow-sm" name="customer_id" id="customer-id">
                                         <option value="">Walk-in customer</option>
                                         {% for customer in customers %}
                                             <option value="{{ customer.pk }}">{{ customer.name }}{% if customer.phone %} — {{ customer.phone }}{% endif %}</option>
                                         {% endfor %}
                                     </select>
+                                </div>
+                                <div class="col-12">
+                                    <label for="customer-name" class="form-label small fw-semibold text-secondary mb-1">Customer Name for Receipt</label>
+                                    <input class="form-control form-control-sm shadow-sm" name="customer_name" id="customer-name" maxlength="150" placeholder="Type customer name" required>
                                 </div>
                                 <div class="col-6">
                                     <label for="discount" class="form-label small fw-semibold text-secondary mb-1">Discount (KSh)</label>
@@ -312,7 +359,7 @@
                             <button id="checkout-button" name="action" value="invoice" class="btn btn-success btn-lg text-white fw-bold action-btn shadow-sm" disabled>
                                 <i class="fa-solid fa-circle-check me-2"></i>Complete Sale
                             </button>
-                            <button name="action" value="quotation" class="btn btn-outline-primary fw-semibold action-btn" id="quotation-button" disabled>
+                            <button name="action" value="quotation" formnovalidate class="btn btn-outline-primary fw-semibold action-btn" id="quotation-button" disabled>
                                 <i class="fa-solid fa-file-invoice me-2"></i>Save as Quotation
                             </button>
                         </div>
@@ -344,7 +391,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="{% static 'vendor/html5-qrcode.min.js' %}" type="text/javascript"></script>
 <script>
     // Preserved JavaScript Logic
     const currency = "KSh";
@@ -358,6 +405,37 @@
     const discountInput = document.querySelector('#discount'); 
     const priceType = document.querySelector('#price-type');
     const cartItemCount = document.querySelector('#cart-item-count');
+    const paymentMethod = document.querySelector('#payment-method');
+    const customerSelect = document.querySelector('#customer-id');
+    const customerNameInput = document.querySelector('#customer-name');
+    customerSelect.addEventListener('change', () => {
+        const selectedCustomer = customerSelect.selectedOptions[0];
+        if (selectedCustomer?.value) customerNameInput.value = selectedCustomer.textContent.split(' — ')[0].trim();
+    });
+
+    function updateCashChange() {
+        const tenderedInput = document.querySelector('#amount-tendered');
+        const changeOutput = document.querySelector('#cash-change');
+        if (!tenderedInput || !changeOutput) return;
+        const tendered = Number(tenderedInput.value);
+        const total = Number(cartTotal.textContent);
+        changeOutput.textContent = Number.isFinite(tendered)
+            ? Math.max(0, tendered - total).toFixed(2)
+            : '0.00';
+    }
+
+    function updatePaymentFields() {
+        document.querySelectorAll('.payment-detail-group').forEach((group) => {
+            const active = group.dataset.paymentGroup === paymentMethod.value;
+            group.classList.toggle('d-none', !active);
+            group.querySelectorAll('input').forEach((input) => {
+                input.disabled = !active;
+                input.required = active && input.dataset.paymentRequired === 'true';
+            });
+        });
+        document.querySelector('#amount-tendered')?.addEventListener('input', updateCashChange);
+        updateCashChange();
+    }
 
     const priceFor = (item) => priceType.value === 'wholesale' ? item.wholesalePrice : item.retailPrice;
     
@@ -377,6 +455,7 @@
             checkoutButton.disabled = true; 
             quotationButton.disabled = true; 
             cartItemCount.textContent = '0 Items';
+            updateCashChange();
             return; 
         } 
         
@@ -406,6 +485,7 @@
         const discount = Math.max(0, Number(discountInput.value) || 0); 
         cartSubtotal.textContent = total.toFixed(2); 
         cartTotal.textContent = Math.max(0, total - discount).toFixed(2); 
+        updateCashChange();
         checkoutButton.disabled = false; 
         quotationButton.disabled = false; 
         cartItemCount.textContent = `${itemCount} Item${itemCount !== 1 ? 's' : ''}`;
@@ -415,14 +495,64 @@
         const id = Number(button.dataset.id); 
         const existing = cart.find((item) => item.id === id); 
         if (existing) { 
-            if (existing.isService || existing.quantity < existing.stock) existing.quantity += 1; 
+            if (existing.isService || existing.quantity < existing.stock) existing.quantity += 1;
+            else {
+                showScanFeedback('No more stock is available for this item.', 'warning');
+                return false;
+            }
         } else { 
-            cart.push({ id, name: button.dataset.name, retailPrice: Number(button.dataset.retailPrice), wholesalePrice: Number(button.dataset.wholesalePrice), stock: Number(button.dataset.stock), isService: button.dataset.isService === 'true', quantity: 1 }); 
+            const stock = Number(button.dataset.stock);
+            const isService = button.dataset.isService === 'true';
+            if (!isService && stock < 1) {
+                showScanFeedback(`${button.dataset.name} is out of stock.`, 'danger');
+                return false;
+            }
+            cart.push({ id, name: button.dataset.name, retailPrice: Number(button.dataset.retailPrice), wholesalePrice: Number(button.dataset.wholesalePrice), stock, isService, quantity: 1 });
         } 
         renderCart(); 
+        return true;
     }
     
     document.querySelectorAll('.add-product').forEach((button) => button.addEventListener('click', () => addProductFromButton(button)));
+
+    let scannedKeys = '';
+    let lastScannedKeyAt = 0;
+    let scannerSequence = true;
+    document.addEventListener('keydown', (event) => {
+        const now = Date.now();
+        if (event.key === 'Enter') {
+            if (scannedKeys.length >= 3 && scannerSequence && now - lastScannedKeyAt < 120) {
+                event.preventDefault();
+                const code = scannedKeys.trim().toLowerCase();
+                const productButton = Array.from(document.querySelectorAll('.add-product')).find((button) => (
+                    button.dataset.sku.trim().toLowerCase() === code ||
+                    button.dataset.barcode.trim().toLowerCase() === code
+                ));
+                if (productButton) {
+                    const added = addProductFromButton(productButton);
+                    if (added) {
+                        const stock = Number(productButton.dataset.stock);
+                        const threshold = Number(productButton.dataset.lowStockThreshold || 5);
+                        showScanFeedback(stock <= threshold ? `${productButton.dataset.name} scanned. Low stock: ${stock} remaining.` : `Scanned ${productButton.dataset.name}.`, stock <= threshold ? 'warning' : 'success');
+                    }
+                } else {
+                    showScanFeedback(`No product matches barcode ${scannedKeys.trim()}.`, 'warning');
+                }
+            }
+            scannedKeys = '';
+            scannerSequence = true;
+            return;
+        }
+        if (event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) return;
+        if (now - lastScannedKeyAt > 100) {
+            scannedKeys = '';
+            scannerSequence = true;
+        } else if (scannedKeys.length && now - lastScannedKeyAt > 100) {
+            scannerSequence = false;
+        }
+        scannedKeys += event.key;
+        lastScannedKeyAt = now;
+    }, true);
     
     cartItems.addEventListener('click', (event) => { 
         const id = Number(event.target.closest('button')?.dataset.id); 
@@ -439,6 +569,8 @@
     
     priceType.addEventListener('change', () => { updateProductPrices(); renderCart(); }); 
     discountInput.addEventListener('input', renderCart);
+    paymentMethod.addEventListener('change', updatePaymentFields);
+    updatePaymentFields();
     
     // Category Filtering
     const categoryCards = document.querySelectorAll('.category-card'); 
@@ -478,7 +610,7 @@
     
     const showScanFeedback = (message, type) => { 
         scanFeedback.className = `alert alert-${type} mt-3 mb-0 rounded-4 shadow-sm`; 
-        scanFeedback.innerHTML = `<i class="fa-solid fa-circle-check me-2"></i>${message}`; 
+        scanFeedback.textContent = message;
     };
     
     const startScanner = () => { 
@@ -492,14 +624,29 @@
         
         barcodeScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 250, height: 150 } }, (decodedText) => { 
             if (scanHandled) return; 
-            const productButton = Array.from(document.querySelectorAll('.add-product')).find((button) => button.dataset.sku.trim() === decodedText.trim()); 
+            const normalizedCode = decodedText.trim().toLowerCase();
+            const productButton = Array.from(document.querySelectorAll('.add-product')).find((button) => (
+                button.dataset.sku.trim().toLowerCase() === normalizedCode ||
+                button.dataset.barcode.trim().toLowerCase() === normalizedCode
+            ));
             if (!productButton) { 
-                scannerStatus.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-warning me-2"></i>SKU "${decodedText}" not found.`; 
+                scannerStatus.textContent = `Barcode "${decodedText}" not found.`;
                 return; 
             } 
             scanHandled = true; 
-            addProductFromButton(productButton); 
-            showScanFeedback(`<strong>${productButton.dataset.name}</strong> was added to the cart.`, 'success'); 
+            const added = addProductFromButton(productButton);
+            if (!added) {
+                scannerStatus.textContent = "This product is out of stock.";
+                return;
+            }
+            const stock = Number(productButton.dataset.stock);
+            const threshold = Number(productButton.dataset.lowStockThreshold || 5);
+            showScanFeedback(
+                stock <= threshold
+                    ? `${productButton.dataset.name} scanned. Low stock: ${stock} remaining.`
+                    : `${productButton.dataset.name} was added to the cart.`,
+                stock <= threshold ? 'warning' : 'success'
+            );
             scannerStatus.textContent = 'Item added successfully.'; 
             stopScanner().finally(() => bootstrap.Modal.getInstance(scannerModal).hide()); 
         }, () => {}).then(() => { 

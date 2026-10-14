@@ -15,7 +15,10 @@ class CustomUser(django.contrib.auth.models.AbstractUser):
 
 
 class ShopSettings(models.Model):
-    shop_name = models.CharField(max_length=150, default="CorePoint POS")
+    shop_name = models.CharField(
+        max_length=150,
+        default="CHIWAS LIQUOR STORE & RESTAURANT (Opposite Quickmart)",
+    )
     phone = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
     address = models.TextField(blank=True)

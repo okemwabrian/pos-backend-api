@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#321425" />
+    <meta name="description" content="Point of sale for CHIWAS LIQUOR STORE & RESTAURANT, Opposite Quickmart." />
+    <link rel="icon" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>CHIWAS LIQUOR STORE &amp; RESTAURANT</title>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section id="login-panel" class="panel login-panel">
+        <img class="chiwas-logo login-logo" alt="CHIWAS LIQUOR STORE & RESTAURANT" />
+        <p class="eyebrow">POINT OF SALE</p>
+        <h1>CHIWAS LIQUOR STORE &amp; RESTAURANT</h1>
+        <p class="muted">Create a local owner account to start without a server, or choose your store server to sync shared data.</p>
+        <form id="login-form">
+          <label for="login-mode">How do you want to sign in?</label>
+          <select id="login-mode">
+            <option value="standalone" selected>Standalone on this device</option>
+            <option value="server">Store server</option>
+          </select>
+          <div id="backend-url-field">
+            <label for="api-base">Backend URL</label>
+            <input id="api-base" type="url" placeholder="https://your-pos.example.com or http://192.168.1.10:8000" autocomplete="url" required />
+            <p class="muted small">Use HTTPS over the internet. HTTP is allowed only for trusted private Wi-Fi/LAN networks.</p>
+          </div>
+          <label for="username">Username</label>
+          <input id="username" autocomplete="username" required />
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" required />
+          <button class="primary full-width" type="submit">Sign in</button>
+        </form>
+        <button id="continue-saved-session" class="secondary full-width hidden" type="button">Continue with saved account</button>
+        <button id="show-local-setup" class="secondary full-width" type="button">First time here? Create the owner account</button>
+        <p id="login-message" class="message" role="status"></p>
+      </section>
+
+      <section id="local-setup-panel" class="panel login-panel hidden">
+        <img class="chiwas-logo login-logo" alt="CHIWAS LIQUOR STORE & RESTAURANT" />
+        <h1>Create this device's owner account</h1>
+        <p class="muted">This account and its inventory stay on this device. Set a strong password; there is no default password.</p>
+        <form id="local-setup-form">
+          <label for="local-setup-username">Username</label>
+          <input id="local-setup-username" autocomplete="username" required />
+          <label for="local-setup-name">Owner name</label>
+          <input id="local-setup-name" autocomplete="name" required />
+          <label for="local-setup-password">Password (at least 10 characters)</label>
+          <input id="local-setup-password" type="password" autocomplete="new-password" minlength="10" required />
+          <label for="local-setup-confirm">Confirm password</label>
+          <input id="local-setup-confirm" type="password" autocomplete="new-password" minlength="10" required />
+          <button class="primary full-width" type="submit">Create local owner account</button>
+        </form>
+        <button id="back-to-login" class="plain-button full-width" type="button">Back to sign in</button>
+        <p id="local-setup-message" class="message" role="status"></p>
+      </section>
+
+      <section id="pos-panel" class="hidden">
+        <header class="topbar">
+          <div>
+            <img class="chiwas-logo topbar-logo" alt="CHIWAS LIQUOR STORE & RESTAURANT · OPPOSITE QUICKMART" />
+            <h1>Sales Terminal</h1>
+          </div>
+          <div class="topbar-actions">
+            <span id="connection-status" class="status-pill">Checking connection</span>
+            <button id="sync-button" class="secondary" type="button">Sync now</button>
+            <button id="logout-button" class="plain-button" type="button">Sign out</button>
+          </div>
+        </header>
+
+        <p id="app-message" class="message" role="status"></p>
+
+        <div class="workspace">
+          <section class="panel catalog-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Inventory</h2>
+                <p id="catalog-updated" class="muted small"></p>
+              </div>
+              <input id="product-search" type="search" placeholder="Search name or barcode" aria-label="Search products" />
+            </div>
+            <div id="product-list" class="product-list"></div>
+          </section>
+
+          <aside class="panel checkout-panel">
+            <div class="panel-heading">
+              <h2>Current sale</h2>
+              <span id="cart-count" class="status-pill">0 items</span>
+            </div>
+            <div id="cart-list" class="cart-list"></div>
+            <form id="sale-form">
+              <label for="price-type">Price type</label>
+              <select id="price-type">
+                <option value="retail">Retail</option>
+                <option value="wholesale">Wholesale</option>
+              </select>
+              <label for="payment-method">Payment method</label>
+              <select id="payment-method" required>
+                <option value="" selected disabled>Choose payment</option>
+                <option value="cash">Cash</option>
+                <option value="till_number">TILL NUMBER</option>
+                <option value="paybill">PAYBILL</option>
+                <option value="send_money">SEND MONEY</option>
+                <option value="mpesa">M-Pesa</option>
+                <option value="card">Card</option>
+              </select>
+              <div id="payment-fields"></div>
+              <label for="sale-customer">Customer</label>
+              <select id="sale-customer">
+                <option value="">Walk-in Customer</option>
+              </select>
+              <label for="sale-customer-name">Customer name for receipt</label>
+              <input id="sale-customer-name" maxlength="150" required />
+              <label for="hold-tab-name">Customer / table name for an open tab</label>
+              <input id="hold-tab-name" maxlength="150" />
+              <button id="park-order" class="secondary full-width" type="button">Hold / Park order</button>
+              <label for="discount">Discount (KSh)</label>
+              <input id="discount" type="number" min="0" step="0.01" value="0" />
+              <p class="total-line"><span>Total</span><strong>KSh <span id="sale-total">0.00</span></strong></p>
+              <button id="complete-sale" class="primary full-width" type="submit" disabled>Complete sale</button>
+            </form>
+          </aside>
+        </div>
+
+        <section class="panel restock-panel">
+          <div class="panel-heading"><div><h2>Open customer tabs</h2><p class="muted small">Park orders here and resume them when the customer is ready to pay.</p></div></div>
+          <ul id="open-tabs-list" class="queue-list"></ul>
+        </section>
+
+        <section id="restock-panel" class="panel restock-panel hidden">
+          <div class="panel-heading"><h2>Stock In</h2><span class="muted small">Available to store staff</span></div>
+          <form id="restock-form" class="restock-form">
+            <label for="restock-product">Product</label>
+            <select id="restock-product" required></select>
+            <label for="restock-quantity">Units to add</label>
+            <input id="restock-quantity" type="number" min="1" step="1" required />
+            <button class="secondary" type="submit">Queue restock</button>
+          </form>
+        </section>
+
+        <section id="local-management-panel" class="panel restock-panel hidden">
+          <div class="panel-heading">
+            <div><h2>Device Inventory Management</h2><p class="muted small">Manage local categories, products, barcodes, opening stock, and reports.</p></div>
+          </div>
+          <form id="local-category-form" class="restock-form">
+            <label for="local-category-name">New category</label>
+            <input id="local-category-name" required maxlength="100" />
+            <button class="secondary" type="submit">Add category</button>
+          </form>
+          <form id="local-product-form" class="restock-form">
+            <label for="local-product-name">Product name</label>
+            <input id="local-product-name" required />
+            <label for="local-product-barcode">Barcode / SKU (scan or type)</label>
+            <input id="local-product-barcode" autocomplete="off" autofocus required />
+            <label for="local-product-category">Category</label>
+            <select id="local-product-category"><option value="">No category</option></select>
+            <label for="local-product-size">Bottle size / package</label>
+            <select id="local-product-size">
+              <option value="">Not specified</option><option>250ml</option><option>350ml</option><option>500ml</option><option>750ml</option><option>1L</option><option>Crate/Tot</option>
+            </select>
+            <label for="local-product-image">Product image</label>
+            <input id="local-product-image" type="file" accept="image/*" />
+            <label for="local-product-cost">Cost price (KSh)</label>
+            <input id="local-product-cost" type="number" min="0" step="0.01" value="0" required />
+            <label for="local-product-retail">Retail price (KSh)</label>
+            <input id="local-product-retail" type="number" min="0" step="0.01" required />
+            <label for="local-product-wholesale">Wholesale price (KSh)</label>
+            <input id="local-product-wholesale" type="number" min="0" step="0.01" required />
+            <label for="local-product-case-units">Units per crate / carton</label>
+            <input id="local-product-case-units" type="number" min="1" step="1" value="1" required />
+            <label for="local-product-case-price">Crate / carton price (optional)</label>
+            <input id="local-product-case-price" type="number" min="0" step="0.01" />
+            <label for="local-product-stock">Opening stock</label>
+            <input id="local-product-stock" type="number" min="0" step="1" value="0" required />
+            <label for="local-product-threshold">Low-stock threshold</label>
+            <input id="local-product-threshold" type="number" min="0" step="1" value="5" required />
+            <button class="primary" type="submit">Save product</button>
+          </form>
+          <form id="local-restock-form" class="restock-form">
+            <label for="local-restock-barcode">Restock barcode / SKU</label>
+            <input id="local-restock-barcode" autocomplete="off" required />
+            <label for="local-restock-quantity">Units to add</label>
+            <input id="local-restock-quantity" type="number" min="1" step="1" required />
+            <button class="secondary" type="submit">Add stock</button>
+          </form>
+          <div class="panel-heading mt-3">
+            <h2>End-of-Day / Z-Report</h2>
+          </div>
+          <div class="report-range">
+            <div><label for="local-report-start">From</label><input id="local-report-start" type="date" /></div>
+            <div><label for="local-report-end">To</label><input id="local-report-end" type="date" /></div>
+            <button id="refresh-local-report" class="secondary" type="button">Run report</button>
+          </div>
+          <div id="local-report" class="muted small" aria-live="polite">No sales recorded on this device yet.</div>
+          <div class="backup-actions">
+            <button id="export-local-backup" class="secondary mt-2" type="button">Download JSON backup</button>
+            <button id="import-local-backup" class="secondary mt-2" type="button">Restore JSON backup</button>
+            <button id="export-local-csv-backup" class="secondary mt-2" type="button">Download CSV backup</button>
+            <button id="import-local-csv-backup" class="secondary mt-2" type="button">Restore CSV backup</button>
+            <input id="import-local-backup-file" class="hidden" type="file" accept="application/json,.json,text/csv,.csv" />
+            <button id="export-local-report" class="secondary mt-2" type="button">Export sales CSV</button>
+          </div>
+        </section>
+
+        <section class="panel queue-panel">
+          <div class="panel-heading">
+            <div><h2>Pending Changes</h2><p class="muted small">Sales and restocks sync automatically when a connection returns.</p></div>
+            <span id="queue-count" class="status-pill">0 pending</span>
+          </div>
+          <ul id="queue-list" class="queue-list"></ul>
+        </section>
+      </section>
+
+      <section id="receipt-panel" class="receipt-panel hidden" aria-live="polite"></section>
+    </main>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

@@ -5,6 +5,7 @@ from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import HttpResponse
@@ -29,9 +30,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
 def pos_terminal_view(request):
-    products = Product.objects.filter(
-        Q(stock_quantity__gt=0) | Q(is_service=True)
-    ).order_by("name")
+    products = Product.objects.all().order_by("name")
 
     if request.method == "GET":
         return render(
@@ -55,14 +54,29 @@ def pos_terminal_view(request):
 
     try:
         submitted_cart = json.loads(request.POST.get("cart", "[]"))
-        payment_method = request.POST.get("payment_method", "cash")
-        price_type = request.POST.get("price_type", "retail")
+        payment_method = request.POST.get("payment_method", "").strip()
         action = request.POST.get("action", "invoice")
+        payment_details = {
+            "till_number": request.POST.get("till_number", "").strip(),
+            "transaction_code": request.POST.get("transaction_code", "").strip(),
+            "payer_name": request.POST.get("payer_name", "").strip(),
+            "paybill_number": request.POST.get("paybill_number", "").strip(),
+            "account_number": request.POST.get("account_number", "").strip(),
+            "phone_number": request.POST.get("phone_number", "").strip(),
+            "amount_tendered": None,
+        }
+        if action == "invoice" and payment_method == "cash":
+            amount_tendered = request.POST.get("amount_tendered", "").strip()
+            if not amount_tendered:
+                raise ValueError("Enter the cash amount received.")
+            payment_details["amount_tendered"] = Decimal(amount_tendered)
+        price_type = request.POST.get("price_type", "retail")
         customer_id = request.POST.get("customer_id")
+        customer_name = request.POST.get("customer_name", "").strip()
         discount = Decimal(request.POST.get("discount", "0") or "0")
         comment = request.POST.get("comment", "").strip()
 
-        if payment_method not in dict(Invoice.PAYMENT_CHOICES):
+        if action == "invoice" and payment_method not in dict(Invoice.PAYMENT_CHOICES):
             raise ValueError("Choose a valid payment method.")
         if price_type not in {"retail", "wholesale"}:
             raise ValueError("Choose a valid price type.")
@@ -112,6 +126,8 @@ def pos_terminal_view(request):
         if discount > subtotal:
             raise ValueError("Discount cannot exceed the cart subtotal.")
         customer = Customer.objects.filter(pk=customer_id).first() if customer_id else None
+        if action == "invoice" and not customer_name and not customer:
+            raise ValueError("Enter the customer name for the receipt.")
         total_amount = subtotal - discount
         if action == "quotation":
             quotation = Quotation.objects.create(customer=customer, cashier=request.user, subtotal=subtotal, discount_amount=discount, total_amount=total_amount, comment=comment)
@@ -119,14 +135,21 @@ def pos_terminal_view(request):
             messages.success(request, f"Quotation #{quotation.pk} saved. Stock was not deducted.")
             return redirect("sales:bills_quotes")
 
-        invoice = Invoice.objects.create(
+        invoice = Invoice(
             cashier=request.user,
             customer=customer,
+            customer_name=customer_name or (customer.name if customer else ""),
             payment_method=payment_method,
             total_amount=total_amount,
             discount_amount=discount,
             comment=comment,
+            **payment_details,
         )
+        try:
+            invoice.clean()
+        except ValidationError as error:
+            raise ValueError("; ".join(error.messages)) from error
+        invoice.save()
 
         InvoiceItem.objects.bulk_create(
             [
@@ -135,6 +158,7 @@ def pos_terminal_view(request):
                     product=product,
                     quantity=quantity,
                     price_at_sale=price_at_sale,
+                    cost_at_sale=product.cost_price,
                 )
                 for product, quantity, price_at_sale in sale_lines
             ]
@@ -146,7 +170,13 @@ def pos_terminal_view(request):
             product.stock_quantity -= quantity
             product.save(update_fields=["stock_quantity", "updated_at"])
 
-    except (json.JSONDecodeError, KeyError, TypeError, ValueError, InvalidOperation) as error:
+    except (
+        json.JSONDecodeError,
+        KeyError,
+        TypeError,
+        ValueError,
+        InvalidOperation,
+    ) as error:
         transaction.set_rollback(True)
         messages.error(request, str(error) or "The submitted cart is invalid.")
         return redirect("sales:pos_terminal")
