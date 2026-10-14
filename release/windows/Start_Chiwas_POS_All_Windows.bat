@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 
 if not exist "portable-pos\index.html" (
-    echo The offline POS files are missing. Extract the complete Windows package.
+    echo CHIWAS POS files are missing. Extract the complete Windows ZIP first.
     pause
     exit /b 1
 )
@@ -17,6 +17,6 @@ if errorlevel 1 (
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Start_Offline_Pos.ps1"
 if errorlevel 1 (
-    echo The local POS could not be started.
+    echo CHIWAS POS could not be started. Check that a Chromium-based browser is installed.
     pause
 )

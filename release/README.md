@@ -6,9 +6,10 @@ The workflow at `.github/workflows/build-pos-releases.yml` runs for pushes to
 `main` and for manual `workflow_dispatch`. It builds:
 
 - `Chiwas-Liquor-POS.apk` — Android debug APK, signed with Android's debug key.
-- `Chiwas-POS-Windows-7-8-10-11.zip` — portable local web app with a PowerShell
-  local server and Windows launcher.
-- `Chiwas-POS-Ubuntu.zip` — portable local web app with an Ubuntu shell launcher.
+- `Chiwas-POS-Windows-7-8-10-11.zip` — local web app with a Windows setup
+  batch file, Desktop shortcut creation, and PowerShell local server.
+- `Chiwas-POS-Ubuntu.zip` — local web app with an Ubuntu setup script,
+  Applications menu entry, and shell launcher.
 
 The three files are uploaded as the `chiwas-pos-downloads` Actions artifact and
 attached to a GitHub Release for the workflow run. Find run artifacts under
@@ -57,9 +58,13 @@ After `cd mobile && npm ci && npm run build`, run:
 bash release/package_portable.sh
 ```
 
-The ZIPs are written under `release/dist/`. Windows requires Windows
-PowerShell and a Chromium-based browser. Ubuntu requires Python 3 and Chrome or
-Chromium. The app and data are stored locally; no Django service is required.
+The ZIPs are written under `release/dist/`. On Windows, extract the ZIP and
+double-click `00-SETUP_CHIWAS_POS.bat` to install for the current user, create a
+Desktop shortcut, and start the POS. `START_CHIWAS_POS.bat` launches it without
+installing. Windows requires PowerShell and a Chromium-based browser. On
+Ubuntu, run `00-INSTALL_CHIWAS_POS.sh` to create an Applications menu entry, or
+run `Start_Chiwas_POS_Linux.sh` directly. Ubuntu requires Python 3 and Chrome
+or Chromium. The app and data are stored locally; no Django service is required.
 
 Windows 7/8 are outside current Chrome support and require a compatible older
 Chromium browser; modern browser versions are not guaranteed to run on those

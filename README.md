@@ -93,8 +93,12 @@ Android SDK/APK build instructions. Run `run_chiwas_linux.sh` on Ubuntu to
 start the LAN Django server and open the POS in a Chrome app window. The
 Windows and Ubuntu standalone packages are built from `mobile/www` using
 `bash release/package_portable.sh`. The Windows 7/8/10/11 ZIP has a local
-PowerShell static server and launcher; the Ubuntu ZIP uses Python 3's local
-static server. Both need a compatible Chromium-based browser. Modern Chrome
+PowerShell static server and launcher. Extract the Windows ZIP and double-click
+`00-SETUP_CHIWAS_POS.bat` to install for the current user, add a Desktop
+shortcut, and start the POS. `START_CHIWAS_POS.bat` launches it without
+installing. On Ubuntu, run `00-INSTALL_CHIWAS_POS.sh` from the extracted ZIP
+to add an Applications menu entry, or run `Start_Chiwas_POS_Linux.sh` for a
+one-time launch. Both need a compatible Chromium-based browser. Modern Chrome
 no longer supports Windows 7/8; those systems require an older compatible
 browser and are not covered by current-browser support. These portable web
 packages are not native `.exe`/`.deb` applications.
