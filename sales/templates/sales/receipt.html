@@ -25,6 +25,8 @@
         }
 
         .receipt-card {
+            position: relative;
+            isolation: isolate;
             background: #ffffff;
             width: min(100%, 420px);
             padding: 24px;
@@ -36,10 +38,25 @@
            2. Authentic Receipt Styles (Monospace)
            --------------------------------------------------------- */
         .receipt-content {
+            position: relative;
+            z-index: 1;
             font-family: 'Courier New', Courier, monospace; /* Best for thermal printers */
             font-size: 13px;
             line-height: 1.4;
             color: #000000;
+        }
+
+        .receipt-watermark {
+            position: absolute;
+            z-index: 0;
+            top: 42%;
+            left: 50%;
+            width: 74%;
+            max-height: 48%;
+            object-fit: contain;
+            transform: translate(-50%, -50%);
+            opacity: 0.045;
+            pointer-events: none;
         }
 
         .center { text-align: center; }
@@ -124,19 +141,24 @@
             .receipt-logo { width: 38mm; max-width: 38mm; max-height: 22mm; }
             .paper-58 .receipt-content { font-size: 10px; }
             .receipt-content, .receipt-card { color: #000 !important; }
+            .receipt-watermark {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="receipt-card">
+        <img class="receipt-watermark" src="{% static 'images/free-house-logo.svg' %}" alt="" aria-hidden="true">
         <!-- Thermal Receipt Content -->
         <div class="receipt-content">
             <div class="center">
                 <img class="receipt-logo" src="{% static 'images/free-house-logo.svg' %}" alt="FREE HOUSE BAR &amp; RESTAURANT">
                 <div class="store-subtitle">Till No: {{ store_till_number }}</div>
                 <div style="margin-top: 8px;">RECEIPT #{{ invoice.pk }}</div>
-                <div>{{ invoice.created_at|date:"d M Y, H:i" }}</div>
+                <div>{{ invoice.created_at|date:"d M Y, H:i" }} EAT</div>
             </div>
             
             <div class="line"></div>
@@ -186,7 +208,7 @@
             
             <table class="total-wrapper">
                 <tr>
-                    <td>SUBTOTAL</td>
+                    <td>{% if invoice.vat_inclusive %}SUBTOTAL (VAT incl.){% else %}SUBTOTAL{% endif %}</td>
                     <td class="numeric" colspan="3">KSh {{ invoice.subtotal_amount|floatformat:2 }}</td>
                 </tr>
                 {% if invoice.discount_amount %}
@@ -196,7 +218,7 @@
                     </tr>
                 {% endif %}
                 <tr>
-                    <td>VAT ({{ invoice.vat_rate|floatformat:0 }}%)</td>
+                    <td>{% if invoice.vat_inclusive %}VAT INCLUDED{% else %}VAT{% endif %} ({{ invoice.vat_rate|floatformat:0 }}%)</td>
                     <td class="numeric" colspan="3">KSh {{ invoice.vat_amount|floatformat:2 }}</td>
                 </tr>
                 <tr class="total-row">

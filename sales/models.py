@@ -38,6 +38,7 @@ class Invoice(models.Model):
     vat_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    vat_inclusive = models.BooleanField(default=False)
     comment = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

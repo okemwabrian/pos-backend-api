@@ -51,7 +51,12 @@ class OfflineSyncApiTests(APITestCase):
 
         catalog = self.client.get(reverse("offline:catalog"))
         self.assertEqual(catalog.status_code, 200)
-        self.assertEqual(catalog.data["products"][0]["low_stock_threshold"], 5)
+        product = next(
+            product
+            for product in catalog.data["products"]
+            if product["id"] == self.product.pk
+        )
+        self.assertEqual(product["low_stock_threshold"], 5)
 
     def test_sale_sync_is_idempotent_and_deducts_stock_once(self):
         self.authenticate_as(self.cashier)
@@ -80,8 +85,9 @@ class OfflineSyncApiTests(APITestCase):
         self.assertTrue(duplicate.data["results"][0]["already_synced"])
         invoice = Invoice.objects.get()
         self.assertEqual(invoice.subtotal_amount, Decimal("200.00"))
-        self.assertEqual(invoice.vat_amount, Decimal("32.00"))
-        self.assertEqual(invoice.total_amount, Decimal("232.00"))
+        self.assertEqual(invoice.vat_amount, Decimal("27.59"))
+        self.assertEqual(invoice.total_amount, Decimal("200.00"))
+        self.assertTrue(invoice.vat_inclusive)
         self.product.refresh_from_db()
         self.assertEqual(self.product.stock_quantity, 8)
 
@@ -111,8 +117,8 @@ class OfflineSyncApiTests(APITestCase):
         self.assertEqual(response.data["results"][0]["status"], "synced")
         invoice = Invoice.objects.get()
         self.assertEqual(invoice.till_number, "5453103")
-        self.assertEqual(invoice.vat_amount, Decimal("16.00"))
-        self.assertEqual(invoice.total_amount, Decimal("116.00"))
+        self.assertEqual(invoice.vat_amount, Decimal("13.79"))
+        self.assertEqual(invoice.total_amount, Decimal("100.00"))
 
     def test_invalid_sale_details_do_not_deduct_stock(self):
         self.authenticate_as(self.cashier)

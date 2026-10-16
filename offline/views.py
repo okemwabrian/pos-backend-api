@@ -17,7 +17,7 @@ from rest_framework.decorators import (
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from core.store import TILL_NUMBER, VAT_RATE, calculate_vat
+from core.store import TILL_NUMBER, VAT_RATE, calculate_included_vat
 from core.permissions import can_use_pos, is_admin_or_manager
 from crm.models import Customer
 from inventory.models import Product, StockAdjustment
@@ -207,8 +207,8 @@ def _sync_sale(user, operation_id, data):
             comment = data.get("comment", "")
             if not isinstance(comment, str):
                 raise ValueError("Sale note must be text.")
-            taxable_amount = subtotal - discount
-            vat_amount = calculate_vat(taxable_amount)
+            total_amount = subtotal - discount
+            vat_amount = calculate_included_vat(total_amount)
             invoice = Invoice(
                 client_reference=reference,
                 cashier=user,
@@ -218,8 +218,9 @@ def _sync_sale(user, operation_id, data):
                 subtotal_amount=subtotal,
                 vat_rate=VAT_RATE,
                 vat_amount=vat_amount,
-                total_amount=taxable_amount + vat_amount,
+                total_amount=total_amount,
                 discount_amount=discount,
+                vat_inclusive=True,
                 amount_tendered=amount_tendered,
                 comment=comment.strip(),
                 **payment_fields,

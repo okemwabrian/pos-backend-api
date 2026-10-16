@@ -32,9 +32,13 @@ def _period_bounds(period):
 
 
 def _net_revenue(invoices):
-    return invoices.aggregate(
+    inclusive_revenue = invoices.filter(vat_inclusive=True).aggregate(
+        total=Sum(F("total_amount") - F("vat_amount"))
+    )["total"] or 0
+    exclusive_revenue = invoices.filter(vat_inclusive=False).aggregate(
         total=Sum(F("subtotal_amount") - F("discount_amount"))
     )["total"] or 0
+    return inclusive_revenue + exclusive_revenue
 
 
 def _sales_activity(invoices, quotations, limit=50):

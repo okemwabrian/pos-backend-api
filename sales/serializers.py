@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from core.store import TILL_NUMBER, VAT_RATE, calculate_vat
+from core.store import TILL_NUMBER, VAT_RATE, calculate_included_vat
 from .models import Invoice, InvoiceItem
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
@@ -33,6 +33,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'vat_rate',
             'vat_amount',
             'total_amount',
+            'discount_amount',
+            'vat_inclusive',
             'created_at',
             'items',
         ]
@@ -42,6 +44,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'vat_rate',
             'vat_amount',
             'total_amount',
+            'vat_inclusive',
         ]
 
     def validate(self, attrs):
@@ -58,14 +61,15 @@ class InvoiceSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"discount_amount": "Discount must be between zero and the subtotal."}
             )
-        taxable_amount = subtotal - discount
-        vat_amount = calculate_vat(taxable_amount)
+        total_amount = subtotal - discount
+        vat_amount = calculate_included_vat(total_amount)
         invoice_data = {key: value for key, value in attrs.items() if key != 'items'}
         invoice_data.update(
             subtotal_amount=subtotal,
             vat_rate=VAT_RATE,
             vat_amount=vat_amount,
-            total_amount=taxable_amount + vat_amount,
+            total_amount=total_amount,
+            vat_inclusive=True,
         )
         if invoice_data.get("payment_method") == "till_number":
             invoice_data["till_number"] = TILL_NUMBER
@@ -79,7 +83,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
             subtotal_amount=subtotal,
             vat_rate=VAT_RATE,
             vat_amount=vat_amount,
-            total_amount=taxable_amount + vat_amount,
+            total_amount=total_amount,
+            vat_inclusive=True,
             till_number=invoice.till_number,
         )
         return attrs

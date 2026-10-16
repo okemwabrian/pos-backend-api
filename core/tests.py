@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from core.permissions import can_use_pos, is_admin, is_admin_or_manager
 from finance.models import Expense
 from inventory.models import Category, Product
 from sales.models import Invoice, InvoiceItem
@@ -76,3 +77,43 @@ class ZReportTests(TestCase):
         response = self.client.get(reverse("reports"))
 
         self.assertFalse(response.context["z_cost_data_complete"])
+
+    def test_z_report_nets_vat_inclusive_sales_without_changing_legacy_sales(self):
+        Invoice.objects.create(
+            cashier=self.user,
+            customer_name="VAT Inclusive Customer",
+            payment_method="cash",
+            amount_tendered=Decimal("4500.00"),
+            subtotal_amount=Decimal("4500.00"),
+            vat_rate=Decimal("16.00"),
+            vat_amount=Decimal("620.69"),
+            total_amount=Decimal("4500.00"),
+            vat_inclusive=True,
+        )
+
+        response = self.client.get(reverse("reports"))
+
+        self.assertEqual(response.context["z_revenue"], Decimal("3999.31"))
+        self.assertEqual(response.context["z_vat_collected"], Decimal("639.89"))
+
+    def test_superuser_has_full_store_management_access(self):
+        superuser = CustomUser.objects.create_superuser(
+            username="full-access",
+            password="test-password",
+        )
+        self.client.force_login(superuser)
+
+        self.assertTrue(can_use_pos(superuser))
+        self.assertTrue(is_admin_or_manager(superuser))
+        self.assertTrue(is_admin(superuser))
+        for url_name in (
+            "users:manage",
+            "inventory:products",
+            "sales:pos_terminal",
+            "reports",
+        ):
+            with self.subTest(url_name=url_name):
+                self.assertEqual(
+                    self.client.get(reverse(url_name)).status_code,
+                    200,
+                )

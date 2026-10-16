@@ -67,8 +67,9 @@ package sizes, low-stock alerts, restocking, and persistent hold/resume
 customer tabs. Its local date-range Z-report shows sales by Cash, Till,
 Paybill, and Send Money plus cost-based profit and VAT collected; old sales
 without cost snapshots are marked incomplete rather than assigned a guessed
-cost. New receipts use the fixed Till No. 5453103 and apply 16% VAT after
-discount.
+cost. Standalone Android receipts use the fixed Till No. 5453103 and apply 16%
+VAT after discount. Server-synced invoices use the Django POS's
+VAT-inclusive calculation.
 
 Server mode is optional. It authenticates against Django, caches the catalog,
 and queues sales and restocks for sync when online. Android background sync is
@@ -106,8 +107,14 @@ or a terminal. The optional Windows source ZIP and Ubuntu ZIP require Python
 for setup. POS data is stored outside the application and remains on disk
 when the app is closed. The desktop downloads do not launch the standalone
 JavaScript POS app.
-The Django pages may still load JavaScript libraries from `static/` for page
-features such as charts; their HTML and page rendering use Django templates.
+The Django POS uses VAT-inclusive selling prices: a KSh 4,500 sale totals
+KSh 4,500 and shows KSh 620.69 as the included 16% VAT. Receipts use East
+Africa Time and include a faint logo watermark. Existing invoices retain their
+original VAT calculation in reports. Upgrades seed ten Kenyan starter
+categories with five editable sample-priced products each and zero opening
+stock. The Django pages may still load JavaScript libraries from `static/` for
+page features such as charts; their HTML and page rendering use Django
+templates.
 `run_chiwas_linux.sh` remains a developer launcher for serving the Django app
 to trusted LAN devices.
 

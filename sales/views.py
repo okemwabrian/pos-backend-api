@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 from rest_framework import viewsets
 
-from core.store import TILL_NUMBER, VAT_RATE, calculate_vat
+from core.store import TILL_NUMBER, VAT_RATE, calculate_included_vat
 from inventory.models import Category, Product
 from crm.models import Customer
 from .models import Invoice, InvoiceItem, Quotation, QuotationItem
@@ -129,9 +129,8 @@ def pos_terminal_view(request):
         customer = Customer.objects.filter(pk=customer_id).first() if customer_id else None
         if action == "invoice" and not customer_name and not customer:
             raise ValueError("Enter the customer name for the receipt.")
-        taxable_amount = subtotal - discount
-        vat_amount = calculate_vat(taxable_amount)
-        total_amount = taxable_amount + vat_amount
+        total_amount = subtotal - discount
+        vat_amount = calculate_included_vat(total_amount)
         if action == "quotation":
             quotation_total = subtotal - discount
             quotation = Quotation.objects.create(customer=customer, cashier=request.user, subtotal=subtotal, discount_amount=discount, total_amount=quotation_total, comment=comment)
@@ -149,6 +148,7 @@ def pos_terminal_view(request):
             vat_amount=vat_amount,
             total_amount=total_amount,
             discount_amount=discount,
+            vat_inclusive=True,
             comment=comment,
             **payment_details,
         )

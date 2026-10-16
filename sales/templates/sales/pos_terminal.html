@@ -211,13 +211,14 @@
                                         <div><i class="fa-solid fa-wine-bottle w-15px opacity-75"></i> {{ product.bottle_size }}</div>
                                     {% endif %}
                                     {% if product.case_price %}
-                                        <div><i class="fa-solid fa-boxes-stacked w-15px opacity-75"></i> Case of {{ product.units_per_case }}: KSh {{ product.case_price|floatformat:2 }}</div>
+                                        <div><i class="fa-solid fa-boxes-stacked w-15px opacity-75"></i> Case of {{ product.units_per_case }}: KSh {{ product.case_price|floatformat:2 }} (VAT incl.)</div>
                                     {% endif %}
                                 </div>
                                 
                                 <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                                     <div class="fs-6 fw-bold text-success">
                                         KSh <span class="display-price">{{ product.retail_price|floatformat:2 }}</span>
+                                        <span class="small fw-normal text-muted">VAT incl.</span>
                                     </div>
                                     <button type="button" class="btn btn-sm btn-success text-white rounded-circle action-btn add-product shadow-sm" style="width: 32px; height: 32px; padding: 0;" data-id="{{ product.pk }}" data-sku="{{ product.sku }}" data-barcode="{{ product.sku }}" data-name="{{ product.name|escapejs }}" data-retail-price="{{ product.retail_price }}" data-wholesale-price="{{ product.wholesale_price }}" data-stock="{{ product.stock_quantity }}" data-low-stock-threshold="{{ product.low_stock_threshold }}" data-is-service="{{ product.is_service|yesno:'true,false' }}" {% if not product.is_service and product.stock_quantity == 0 %}disabled aria-label="Out of stock"{% endif %}>
                                         <i class="fa-solid fa-plus"></i>
@@ -345,11 +346,11 @@
                             
                             <!-- Totals -->
                             <div class="d-flex justify-content-between small fw-semibold text-secondary mb-1">
-                                <span>Subtotal</span>
+                                <span>Subtotal (VAT included)</span>
                                 <span>KSh <span id="cart-subtotal">0.00</span></span>
                             </div>
                             <div class="d-flex justify-content-between small fw-semibold text-secondary mb-1">
-                                <span>VAT ({{ vat_rate|floatformat:0 }}%)</span>
+                                <span>VAT included ({{ vat_rate|floatformat:0 }}%)</span>
                                 <span>KSh <span id="cart-vat">0.00</span></span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center fs-4 fw-bold text-dark mt-1">
@@ -489,11 +490,11 @@
         
         cartData.value = JSON.stringify(cart.map((item) => ({ product_id: item.id, quantity: item.quantity }))); 
         const discount = Math.max(0, Number(discountInput.value) || 0);
-        const taxableAmount = Math.max(0, total - discount);
-        const vatAmount = Math.round((taxableAmount * {{ vat_rate }} / 100 + Number.EPSILON) * 100) / 100;
+        const totalAfterDiscount = Math.max(0, total - discount);
+        const vatAmount = Math.round((totalAfterDiscount * {{ vat_rate }} / (100 + {{ vat_rate }}) + Number.EPSILON) * 100) / 100;
         cartSubtotal.textContent = total.toFixed(2); 
         cartVat.textContent = vatAmount.toFixed(2);
-        cartTotal.textContent = (taxableAmount + vatAmount).toFixed(2);
+        cartTotal.textContent = totalAfterDiscount.toFixed(2);
         updateCashChange();
         checkoutButton.disabled = false; 
         quotationButton.disabled = false; 

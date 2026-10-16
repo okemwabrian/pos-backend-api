@@ -24,6 +24,31 @@ class LiquorCatalogTests(TestCase):
             }.issubset(set(Category.objects.values_list("name", flat=True)))
         )
 
+    def test_kenyan_starter_catalog_has_ten_categories_and_fifty_zero_stock_items(self):
+        expected_categories = {
+            "Soft Drinks",
+            "Beers",
+            "Spirits",
+            "Wines",
+            "Ciders",
+            "Mixers",
+            "Staple Groceries",
+            "Fresh Produce",
+            "Dairy & Eggs",
+            "Household & Personal Care",
+        }
+        categories = Category.objects.filter(name__in=expected_categories)
+
+        self.assertEqual(categories.count(), 10)
+        self.assertEqual(
+            Product.objects.filter(category__in=categories).count(), 50
+        )
+        self.assertFalse(
+            Product.objects.filter(category__in=categories)
+            .exclude(stock_quantity=0)
+            .exists()
+        )
+
     def test_product_form_exposes_drink_size_and_case_pricing(self):
         self.assertTrue(
             {"bottle_size", "units_per_case", "case_price"}.issubset(

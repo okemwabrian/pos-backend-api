@@ -36,8 +36,12 @@ Standalone and Django reports provide date-range sales totals split by Cash,
 Till, Paybill, and Send Money. New server invoices record cost at the time of
 sale. Historic sales whose item cost was never recorded are flagged as
 incomplete for profit calculations rather than being assigned an assumed cost.
-New sales add 16% VAT after discounts and print the fixed Till No. 5453103.
-The receipt logo, Android icon, and app title use the Free House branding.
+The Django POS uses VAT-inclusive selling prices: a KSh 4,500 sale totals
+KSh 4,500 and shows KSh 620.69 as the included 16% VAT. Receipts use East
+Africa Time and include a faint logo watermark. Existing invoices retain their
+original VAT calculation in reports. Django migrations add ten Kenyan starter
+categories with five editable sample-priced products each and zero opening
+stock. New server invoices print the fixed Till No. 5453103.
 
 ## Local Android build
 
