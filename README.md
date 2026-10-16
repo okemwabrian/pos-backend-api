@@ -35,6 +35,17 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+On first run, open `/setup/` to create the Brian and Chiwas full-access
+administrator accounts. Set a password for each account; each password must
+contain at least four digits. Numeric passwords such as `1234` and `2580` are
+accepted for this local POS. The setup page is disabled after those accounts
+exist.
+
+Local POS sessions survive browser restarts and renew while the system is in
+use (with a ten-year idle expiration). Sign out to end a session. SQLite data
+and uploaded media are stored outside the desktop package and remain on disk
+when the app is closed.
+
 The mobile API lives under `/api/pos/`. POS users authenticate with a
 username/password and receive a token; inventory reads are available to POS
 roles, while stock restocks are restricted to admins and managers. Serve the
@@ -47,12 +58,10 @@ cost are explicitly marked as having incomplete profit data.
 
 ### Standalone mobile and Android app
 
-The `mobile/` app can create a local owner account and operate without a
-Django URL or network connection. In standalone mode, categories, products,
-stock adjustments, sales, customer names, and receipts are stored in the
-device's IndexedDB. Full JSON and CSV backup/restore plus sales CSV export are
-available in the inventory management section. Keep backups outside the device. Local
-account credentials are intentionally not included in exported backups.
+The Android client is a separate app. It can run in local-only mode using
+device IndexedDB, or connect to the Django `/api/pos/` endpoints. Its local
+account and data storage are separate from Django; it is not used by the
+Windows/Ubuntu desktop downloads.
 The mobile POS includes barcode scanning, liquor/restaurant categories and
 package sizes, low-stock alerts, restocking, and persistent hold/resume
 customer tabs. Its local date-range Z-report shows sales by Cash, Till,
@@ -90,26 +99,19 @@ include an uploaded picture.
 
 ## Desktop and portable packages
 
-See [release/README.md](release/README.md) for the Ubuntu desktop launcher,
-portable standalone Windows package, Windows 10/11 Django server build, and
-Android SDK/APK build instructions. Run `run_chiwas_linux.sh` on Ubuntu to
-start the LAN Django server and open the POS in a Chrome app window. The
-Windows and Ubuntu standalone packages are built from `mobile/www` using
-`bash release/package_portable.sh`. The Windows 7/8/10/11 ZIP has a local
-PowerShell static server and launcher. Extract the Windows ZIP and double-click
-`00-SETUP_CHIWAS_POS.bat` to install for the current user, add a Desktop
-shortcut, and start the POS. `START_CHIWAS_POS.bat` launches it without
-installing. On Ubuntu, run `00-INSTALL_CHIWAS_POS.sh` from the extracted ZIP
-to add an Applications menu entry, or run `Start_Chiwas_POS_Linux.sh` for a
-one-time launch. Both need a compatible Chromium-based browser. Modern Chrome
-no longer supports Windows 7/8; those systems require an older compatible
-browser and are not covered by current-browser support. These portable web
-packages are not native `.exe`/`.deb` applications.
+See [release/README.md](release/README.md) for desktop Django package and
+Android APK build instructions. The Windows and Ubuntu ZIPs contain the Django
+project, templates, and static assets. Their launchers install Python
+requirements once, apply Django migrations, and open the server-rendered POS
+at `http://127.0.0.1:8000/`; data is stored outside the extracted source
+folder. They do not package or launch the standalone JavaScript POS app.
+`run_chiwas_linux.sh` remains a developer launcher for serving the Django app
+to trusted LAN devices.
 
 ## Automated GitHub builds and downloads
 
 `.github/workflows/build-pos-releases.yml` runs on pushes to `main` and on
-manual dispatch. It builds the debug-signed Android APK and both portable
+manual dispatch. It builds the debug-signed Android APK and both Django
 desktop ZIPs, uploads them as the `free-house-pos-downloads` Actions artifact, and
 publishes a GitHub Release for that workflow run.
 
@@ -118,6 +120,12 @@ FREE HOUSE POS releases → latest successful run → Artifacts → free-house-p
 For public release assets, go to **GitHub → Releases** and download
 `Free-House-POS.apk`, `Free-House-POS-Windows-7-8-10-11.zip`, or
 `Free-House-POS-Ubuntu.zip`.
+The workflow builds from the exact commit pushed to `main`; local-only files
+such as the SQLite database, virtual environment, and `.env` are not pushed or
+included. The desktop ZIPs contain the same Django templates and source as the
+repository. Each installation creates its own database and media files; those
+local records are intentionally not part of GitHub builds. First-time setup
+creates both administrator accounts with locally chosen passwords.
 
 To publish a new build:
 

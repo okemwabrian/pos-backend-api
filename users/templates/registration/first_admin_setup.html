@@ -19,7 +19,7 @@
             <div class="card-body p-4 p-md-5">
                 <img class="setup-logo" src="{% static 'images/free-house-logo.svg' %}" alt="FREE HOUSE BAR &amp; RESTAURANT">
                 <h1 class="h3 text-center">First-time administrator setup</h1>
-                <p class="text-center text-muted">Create the owner account for {{ shop_name }}. This setup is disabled after the first account is created.</p>
+                <p class="text-center text-muted">Set passwords for both full-access administrator accounts. Each password must contain at least four digits. This setup is disabled after the accounts are created.</p>
                 {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}{% endif %}
                 <form method="post">
                     {% csrf_token %}
@@ -31,9 +31,9 @@
                             {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                         </div>
                     {% endfor %}
-                    <button class="btn btn-success w-100" type="submit">Create owner account</button>
+                    <button class="btn btn-success w-100" type="submit">Create both administrator accounts</button>
                 </form>
-                <p class="small text-muted mt-3 mb-0">Choose a strong password and keep it private. No default password is used.</p>
+                <p class="small text-muted mt-3 mb-0">Brian can use 1234 and Chiwas can use 2580. Keep these passwords private.</p>
             </div>
         </section>
     </main>

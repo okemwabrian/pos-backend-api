@@ -16,7 +16,7 @@ __all__ = ["dashboard_view"]
 @require_http_methods(["GET", "POST"])
 def first_admin_setup_view(request):
     if CustomUser.objects.exists():
-        messages.info(request, "The first administrator has already been configured.")
+        messages.info(request, "The first administrators have already been configured.")
         return redirect("login")
 
     form = FirstAdminSetupForm(request.POST or None)

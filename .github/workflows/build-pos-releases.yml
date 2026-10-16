@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   build:
-    name: Build APK and portable desktop packages
+    name: Build Android APK and Django desktop ZIPs
     runs-on: ubuntu-latest
     steps:
       - name: Check out source
@@ -56,7 +56,7 @@ jobs:
         working-directory: mobile/android
         run: ./gradlew --no-daemon assembleDebug
 
-      - name: Package portable desktop downloads
+      - name: Package Django desktop downloads
         run: bash release/package_portable.sh
 
       - name: Stage APK with release filename

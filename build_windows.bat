@@ -9,26 +9,11 @@ if errorlevel 1 (
     exit /b 1
 )
 
-where npm >nul 2>nul
-if errorlevel 1 (
-    echo Node.js 20 or newer is needed to prepare the bundled offline UI assets.
-    pause
-    exit /b 1
-)
-
 if not exist .venv-windows\Scripts\python.exe py -3 -m venv .venv-windows
 call .venv-windows\Scripts\activate.bat
 python -m pip install --upgrade pip
 if errorlevel 1 goto :failed
 pip install -r requirements-windows.txt
-if errorlevel 1 goto :failed
-cd mobile
-npm install
-if errorlevel 1 goto :failed
-npm run build
-if errorlevel 1 goto :failed
-cd ..
-node mobile\package_windows.mjs
 if errorlevel 1 goto :failed
 pyinstaller --noconfirm --clean build_windows.spec
 if errorlevel 1 goto :failed
@@ -39,8 +24,8 @@ if errorlevel 1 goto :failed
 
 echo.
 echo Server build complete: release\windows\ChiwasLiquorPOS.exe
-echo Portable offline web build: release\windows\portable-pos\
-echo The app creates its database and prompts you to create the owner account on first launch.
+echo This build uses the Django server-rendered templates.
+echo On first launch, create passwords for Brian and Chiwas with at least four digits.
 pause
 exit /b 0
 

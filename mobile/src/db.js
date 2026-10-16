@@ -1,5 +1,6 @@
 const DATABASE_NAME = "chiwas-liquor-pos";
 const DATABASE_VERSION = 2;
+const LOCAL_ACCOUNT_SETUP_KEY = "local-account-setup-v1";
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -106,8 +107,72 @@ export async function getLocalUserCount() {
   return useStore("local_users", "readonly", (store) => store.count());
 }
 
-export async function saveLocalUser(user) {
-  await useStore("local_users", "readwrite", (store) => store.add(user));
+export async function initializeLocalStore(users, categories) {
+  const database = await openDatabase();
+  try {
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction(
+        ["local_users", "local_categories", "settings"],
+        "readwrite",
+      );
+      users.forEach((user) => transaction.objectStore("local_users").add(user));
+      categories.forEach((category) => {
+        transaction.objectStore("local_categories").add(category);
+      });
+      transaction.objectStore("settings").put({
+        key: LOCAL_ACCOUNT_SETUP_KEY,
+        value: true,
+      });
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(
+        transaction.error || new Error("Local account setup was aborted."),
+      );
+    });
+  } finally {
+    database.close();
+  }
+}
+
+export async function migrateLocalAccounts(users) {
+  const database = await openDatabase();
+  try {
+    return await new Promise((resolve, reject) => {
+      const transaction = database.transaction(
+        ["local_users", "settings"],
+        "readwrite",
+      );
+      const localUsers = transaction.objectStore("local_users");
+      const settings = transaction.objectStore("settings");
+      let alreadyMigrated = false;
+      const markerRequest = settings.get(LOCAL_ACCOUNT_SETUP_KEY);
+      markerRequest.onsuccess = () => {
+        if (markerRequest.result?.value) {
+          alreadyMigrated = true;
+          return;
+        }
+        users.forEach((user) => {
+          const userRequest = localUsers.get(user.username);
+          userRequest.onsuccess = () => {
+            const existing = userRequest.result;
+            localUsers.put({
+              ...existing,
+              ...user,
+              created_at: existing?.created_at || user.created_at,
+            });
+          };
+        });
+        settings.put({ key: LOCAL_ACCOUNT_SETUP_KEY, value: true });
+      };
+      transaction.oncomplete = () => resolve(!alreadyMigrated);
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(
+        transaction.error || new Error("Local account update was aborted."),
+      );
+    });
+  } finally {
+    database.close();
+  }
 }
 
 export async function getLocalCategories() {

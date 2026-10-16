@@ -15,7 +15,7 @@
         <img class="chiwas-logo login-logo" alt="FREE HOUSE BAR & RESTAURANT" />
         <p class="eyebrow">POINT OF SALE</p>
         <h1>FREE HOUSE BAR &amp; RESTAURANT</h1>
-        <p class="muted">Create a local owner account to start without a server, or choose your store server to sync shared data.</p>
+        <p class="muted">Create local accounts to start without a server, or choose your store server to sync shared data.</p>
         <form id="login-form">
           <label for="login-mode">How do you want to sign in?</label>
           <select id="login-mode">
@@ -34,24 +34,21 @@
           <button class="primary full-width" type="submit">Sign in</button>
         </form>
         <button id="continue-saved-session" class="secondary full-width hidden" type="button">Continue with saved account</button>
-        <button id="show-local-setup" class="secondary full-width" type="button">First time here? Create the owner account</button>
+        <button id="show-local-setup" class="secondary full-width" type="button">First time here? Set up local accounts</button>
         <p id="login-message" class="message" role="status"></p>
       </section>
 
       <section id="local-setup-panel" class="panel login-panel hidden">
         <img class="chiwas-logo login-logo" alt="FREE HOUSE BAR & RESTAURANT" />
-        <h1>Create this device's owner account</h1>
-        <p class="muted">This account and its inventory stay on this device. Set a strong password; there is no default password.</p>
+        <h1>Set up this device</h1>
+        <p class="muted">Create the two local accounts. Both have full access to this device's POS data.</p>
+        <ul>
+          <li>Brian — password: 1234</li>
+          <li>Chiwas — password: 2580</li>
+        </ul>
+        <p class="muted">These accounts are created only on this device during setup. Anyone who knows these passwords can sign in to this device.</p>
         <form id="local-setup-form">
-          <label for="local-setup-username">Username</label>
-          <input id="local-setup-username" autocomplete="username" required />
-          <label for="local-setup-name">Owner name</label>
-          <input id="local-setup-name" autocomplete="name" required />
-          <label for="local-setup-password">Password (at least 10 characters)</label>
-          <input id="local-setup-password" type="password" autocomplete="new-password" minlength="10" required />
-          <label for="local-setup-confirm">Confirm password</label>
-          <input id="local-setup-confirm" type="password" autocomplete="new-password" minlength="10" required />
-          <button class="primary full-width" type="submit">Create local owner account</button>
+          <button class="primary full-width" type="submit">Create these accounts</button>
         </form>
         <button id="back-to-login" class="plain-button full-width" type="button">Back to sign in</button>
         <p id="local-setup-message" class="message" role="status"></p>

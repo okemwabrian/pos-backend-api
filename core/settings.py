@@ -117,14 +117,17 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {'min_length': 4},
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'users.password_validation.MinimumDigitCountValidator',
     },
 ]
+
+# Keep POS sessions across browser restarts, renewing expiry while in use.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 365 * 10
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True
 
 
 # Internationalization

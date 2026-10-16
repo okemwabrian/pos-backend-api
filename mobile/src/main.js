@@ -12,12 +12,12 @@ import {
   getOpenTabs,
   getProducts,
   getSetting,
+  initializeLocalStore,
+  migrateLocalAccounts,
   removeOperation,
   replaceLocalBackup,
   saveCatalog,
-  saveLocalCategory,
   saveLocalProduct,
-  saveLocalUser,
   saveOpenTabs,
   saveOperation,
   saveSetting,
@@ -25,6 +25,10 @@ import {
 import "./style.css";
 
 const $ = (selector) => document.querySelector(selector);
+const LOCAL_ACCOUNTS = [
+  { username: "brian", display_name: "Brian", password: "1234" },
+  { username: "chiwas", display_name: "Chiwas", password: "2580" },
+];
 const loginPanel = $("#login-panel");
 const localSetupPanel = $("#local-setup-panel");
 const posPanel = $("#pos-panel");
@@ -175,10 +179,24 @@ async function hashLocalPassword(password, salt) {
   return encodeBase64(derived);
 }
 
+async function getLocalAccountRecords() {
+  const createdAt = new Date().toISOString();
+  return Promise.all(LOCAL_ACCOUNTS.map(async ({ username, display_name, password }) => {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    return {
+      username,
+      display_name,
+      salt: Array.from(salt),
+      password_hash: await hashLocalPassword(password, salt),
+      created_at: createdAt,
+    };
+  }));
+}
+
 function setLocalSetupVisible(visible) {
   loginPanel.classList.toggle("hidden", visible);
   localSetupPanel.classList.toggle("hidden", !visible);
-  if (visible) $("#local-setup-username").focus();
+  if (visible) localSetupPanel.querySelector("button[type='submit']").focus();
 }
 
 async function refreshLocalData() {
@@ -1284,7 +1302,7 @@ $("#show-local-setup").addEventListener("click", async () => {
   loginMode.value = "standalone";
   loginMode.dispatchEvent(new Event("change"));
   if (await getLocalUserCount()) {
-    showMessage(loginMessage, "A local owner account already exists on this device. Sign in to continue.", true);
+    showMessage(loginMessage, "Local accounts already exist on this device. Sign in to continue.", true);
     return;
   }
   setLocalSetupVisible(true);
@@ -1294,38 +1312,19 @@ $("#back-to-login").addEventListener("click", () => setLocalSetupVisible(false))
 
 $("#local-setup-form").addEventListener("submit", async (event) => {
   event.preventDefault();
-  const username = $("#local-setup-username").value.trim().toLowerCase();
-  const displayName = $("#local-setup-name").value.trim();
-  const password = $("#local-setup-password").value;
-  const confirmation = $("#local-setup-confirm").value;
-  if (username.length < 3 || !displayName) {
-    showMessage($("#local-setup-message"), "Enter a username of at least 3 characters and your name.", true);
-    return;
-  }
-  if (password.length < 10 || password !== confirmation) {
-    showMessage($("#local-setup-message"), "Use a matching password of at least 10 characters.", true);
-    return;
-  }
   if (await getLocalUserCount()) {
-    showMessage($("#local-setup-message"), "A local owner account already exists.", true);
+    showMessage($("#local-setup-message"), "Local accounts already exist on this device.", true);
     return;
   }
   try {
-    const salt = crypto.getRandomValues(new Uint8Array(16));
-    const passwordHash = await hashLocalPassword(password, salt);
-    await saveLocalUser({
-      username,
-      display_name: displayName,
-      salt: Array.from(salt),
-      password_hash: passwordHash,
-      created_at: new Date().toISOString(),
-    });
-    for (const name of DEFAULT_CATEGORIES) {
-      await saveLocalCategory({ name, created_at: new Date().toISOString() });
-    }
-    $("#local-setup-form").reset();
-    await createLocalSession(username, displayName);
-    showMessage(appMessage, "Standalone owner account created on this device.");
+    const createdAt = new Date().toISOString();
+    const users = await getLocalAccountRecords();
+    await initializeLocalStore(
+      users,
+      DEFAULT_CATEGORIES.map((name) => ({ name, created_at: createdAt })),
+    );
+    await createLocalSession("brian", "Brian");
+    showMessage(appMessage, "Brian and Chiwas accounts created on this device.");
   } catch (error) {
     showMessage($("#local-setup-message"), `Could not create the local account: ${error.message}`, true);
   }
@@ -1619,6 +1618,12 @@ async function startApp() {
   }
   loginMode.dispatchEvent(new Event("change"));
   const localUserCount = await getLocalUserCount();
+  let localAccountsMigrated = false;
+  if (localUserCount > 0) {
+    localAccountsMigrated = await migrateLocalAccounts(
+      await getLocalAccountRecords(),
+    );
+  }
   $("#show-local-setup").classList.toggle("hidden", localUserCount > 0);
   const savedSession = await loadSession();
   if (savedSession) {
@@ -1639,6 +1644,12 @@ async function startApp() {
       await syncQueue();
       await refreshCatalog();
     }
+  }
+  if (localAccountsMigrated) {
+    showMessage(
+      session ? appMessage : loginMessage,
+      "Local accounts updated: Brian / 1234 and Chiwas / 2580. Existing POS data was kept.",
+    );
   }
   updateConnectionStatus();
   if ("serviceWorker" in navigator && import.meta.env.PROD && window.isSecureContext) {
