@@ -99,12 +99,15 @@ include an uploaded picture.
 
 ## Desktop and portable packages
 
-See [release/README.md](release/README.md) for desktop Django package and
-Android APK build instructions. The Windows and Ubuntu ZIPs contain the Django
-project, templates, and static assets. Their launchers install Python
-requirements once, apply Django migrations, and open the server-rendered POS
-at `http://127.0.0.1:8000/`; data is stored outside the extracted source
-folder. They do not package or launch the standalone JavaScript POS app.
+See [release/README.md](release/README.md) for desktop Django installer and
+Android APK build instructions. The Windows download is an installer EXE that
+installs and launches the server-rendered Django POS without requiring Python
+or a terminal. The optional Windows source ZIP and Ubuntu ZIP require Python
+for setup. POS data is stored outside the application and remains on disk
+when the app is closed. The desktop downloads do not launch the standalone
+JavaScript POS app.
+The Django pages may still load JavaScript libraries from `static/` for page
+features such as charts; their HTML and page rendering use Django templates.
 `run_chiwas_linux.sh` remains a developer launcher for serving the Django app
 to trusted LAN devices.
 
@@ -118,8 +121,8 @@ publishes a GitHub Release for that workflow run.
 After pushing a change, download artifacts from **GitHub → Actions → Build
 FREE HOUSE POS releases → latest successful run → Artifacts → free-house-pos-downloads**.
 For public release assets, go to **GitHub → Releases** and download
-`Free-House-POS.apk`, `Free-House-POS-Windows-7-8-10-11.zip`, or
-`Free-House-POS-Ubuntu.zip`.
+`Free-House-POS.apk`, `FREE-HOUSE-POS-Windows-Setup.exe`,
+`FREE-HOUSE-POS-Windows-Source.zip`, or `Free-House-POS-Ubuntu.zip`.
 The workflow builds from the exact commit pushed to `main`; local-only files
 such as the SQLite database, virtual environment, and `.env` are not pushed or
 included. The desktop ZIPs contain the same Django templates and source as the

@@ -15,8 +15,9 @@ command -v zip >/dev/null 2>&1 || {
 
 mkdir -p "$OUTPUT_DIR"
 rm -f "$OUTPUT_DIR/Free-House-POS-Windows-7-8-10-11.zip" \
-    "$OUTPUT_DIR/Free-House-POS-Ubuntu.zip" \
     "$OUTPUT_DIR/Chiwas-POS-Windows-7-8-10-11.zip" \
+    "$OUTPUT_DIR/FREE-HOUSE-POS-Windows-Source.zip" \
+    "$OUTPUT_DIR/Free-House-POS-Ubuntu.zip" \
     "$OUTPUT_DIR/Chiwas-POS-Ubuntu.zip"
 
 WINDOWS_STAGE="$STAGING_DIR/windows"
@@ -40,10 +41,13 @@ FREE HOUSE BAR & RESTAURANT - Portable POS
 This download runs the Django server-rendered POS templates used by the local
 web app. It does not use the standalone JavaScript POS interface.
 
-REQUIREMENTS: Windows, Python 3.12 or newer, and internet access for the first
-setup (to install Python packages). Extract this ZIP to a permanent folder.
-Double-click SETUP_FREE_HOUSE_POS.bat once to install requirements, apply
-database migrations, and launch the POS in your browser.
+For normal installation, download FREE-HOUSE-POS-Windows-Setup.exe from
+GitHub Releases. It installs the app, creates shortcuts, and opens the POS
+without requiring you to use a terminal.
+
+This source ZIP is for users who specifically want to run the Django project
+from Python. It requires Python 3.12 or newer and internet access for setup.
+Extract it to a permanent folder and double-click SETUP_FREE_HOUSE_POS.bat.
 
 For later launches, double-click START_FREE_HOUSE_POS.bat. Sign in at
 http://127.0.0.1:8000/. On first launch, create passwords for the Brian and
@@ -57,7 +61,7 @@ Database, uploaded images, and the generated Django secret key are stored
 outside this folder under your Windows LocalAppData. The server listens only
 on this computer and is not exposed to the network.
 EOF
-(cd "$WINDOWS_STAGE" && zip -qr "$OUTPUT_DIR/Free-House-POS-Windows-7-8-10-11.zip" .)
+(cd "$WINDOWS_STAGE" && zip -qr "$OUTPUT_DIR/FREE-HOUSE-POS-Windows-Source.zip" .)
 
 LINUX_STAGE="$STAGING_DIR/ubuntu"
 mkdir -p "$LINUX_STAGE"

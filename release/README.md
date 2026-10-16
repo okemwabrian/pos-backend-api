@@ -6,12 +6,14 @@ The workflow at `.github/workflows/build-pos-releases.yml` runs for pushes to
 `main` and for manual `workflow_dispatch`. It builds:
 
 - `Free-House-POS.apk` — Android debug APK, signed with Android's debug key.
-- `Free-House-POS-Windows-7-8-10-11.zip` — Django server-rendered POS project
-  with Windows setup and launch batch files.
+- `FREE-HOUSE-POS-Windows-Setup.exe` — Windows installer with Start Menu and
+  optional Desktop shortcuts. Run it to install and launch the POS.
+- `FREE-HOUSE-POS-Windows-Source.zip` — optional Django source package for
+  users who prefer to install and run it with Python.
 - `Free-House-POS-Ubuntu.zip` — Django server-rendered POS project with Ubuntu
   setup and launch scripts.
 
-The three files are uploaded as the `free-house-pos-downloads` Actions artifact and
+The four files are uploaded as the `free-house-pos-downloads` Actions artifact and
 attached to a GitHub Release for the workflow run. Find run artifacts under
 **GitHub → Actions → Build FREE HOUSE POS releases → successful run → Artifacts**;
 find permanent downloadable files under **GitHub → Releases**.
@@ -60,20 +62,24 @@ Run the package script from the repository root:
 bash release/package_portable.sh
 ```
 
-The ZIPs are written under `release/dist/`. They package the Django source,
-templates, and static assets; the Android standalone client is not included.
-Python 3.12 or newer and internet access are needed for first-time dependency
-installation. Extract the Windows ZIP to a permanent folder and run
-`SETUP_FREE_HOUSE_POS.bat`; on Ubuntu, run `SETUP_FREE_HOUSE_POS.sh`. These
-create a per-user virtual environment, install the Python requirements, run
-migrations, and start the POS at `http://127.0.0.1:8000/`. Subsequent launches
-use `START_FREE_HOUSE_POS.bat` or `START_FREE_HOUSE_POS.sh`.
+The Windows installer is built on Windows by GitHub Actions and runs the Django
+server-rendered POS without requiring a separate Python installation. Run the
+installer and follow its prompts; it creates Start Menu and optional Desktop
+shortcuts and offers to launch the POS when installation is complete.
+
+The optional source ZIP and Ubuntu ZIP are written under `release/dist/`. They
+include the Django source, templates, and static assets; the Android
+standalone client is not included. Python 3.12 or newer and internet access
+are needed for first-time dependency installation. On Ubuntu, run
+`SETUP_FREE_HOUSE_POS.sh`; it creates a per-user virtual environment, installs
+requirements, applies migrations, and starts the POS at
+`http://127.0.0.1:8000/`.
 
 The first setup page creates both full-access Django superusers, Brian and
-Chiwas. Choose a different strong password for each account; Django's password
-checks apply. The SQLite database, uploaded media, and generated Django secret
-key are stored outside the extracted source directory. The bundled server
-listens only on localhost.
+Chiwas. Set Brian's password to `1234` and Chiwas's to `2580`, or choose other
+passwords with at least four digits. The SQLite database, uploaded media, and
+generated Django secret key are stored outside the extracted source directory.
+The bundled server listens only on localhost.
 
 ## Ubuntu Django LAN development launcher
 
